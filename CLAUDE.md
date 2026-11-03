@@ -28,6 +28,7 @@ The set was redesigned on 2026-11-03 as a timing minigame (GDD "The DJ set"). No
 
 - Game: `rojo serve` (port 34872), connect from the Rojo plugin in the game place.
 - Tagger: `rojo build tagger.project.json -o TrackTagger.rbxl` once, open it, then `rojo serve tagger.project.json` (port 34873).
+- Set prototype: `rojo build prototype.project.json -o Prototype.rbxl`, open it, press Play (live sync: `rojo serve prototype.project.json`, port 34874). Set the Workspace attribute `SetAutoPlay` to let it play itself for testing.
 - Check before committing: `selene src tools tests` and `stylua --check src tools tests`.
 - Rokit tools live in `%USERPROFILE%\.rokit\bin`.
 

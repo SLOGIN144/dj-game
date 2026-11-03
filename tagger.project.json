@@ -1,0 +1,29 @@
+{
+  "name": "TrackTagger",
+  "servePort": 34873,
+  "tree": {
+    "$className": "DataModel",
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": false
+      }
+    },
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Tests": {
+        "$path": "tests"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "TrackTagger": {
+          "$path": "tools/TrackTagger"
+        }
+      }
+    }
+  }
+}

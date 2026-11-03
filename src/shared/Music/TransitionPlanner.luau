@@ -30,7 +30,7 @@ function TransitionPlanner.mixOutBeat(
 	lengthBeats: number
 ): number
 	local drop = TrackInfo.firstDropFrom(track, enteredAt) or enteredAt
-	local earliest = math.max(nowBeat + Balance.Cards.showBeforeBeats, drop + Balance.Transition.playDropBars * 4)
+	local earliest = math.max(nowBeat + Balance.Transition.leadBeats, drop + Balance.Transition.playDropBars * 4)
 	local phrase = Balance.Transition.phraseBeats
 	local onPhrase = math.ceil(earliest / phrase) * phrase
 	local latest = math.floor((lengthBeats - TransitionPlanner.blendBeats()) / 4) * 4

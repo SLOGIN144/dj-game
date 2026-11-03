@@ -3,12 +3,12 @@
 --   AudioPlayer -> AudioEqualizer -> AudioFilter -> AudioFader (channel) -> AudioFader (xfade) --+
 --   AudioFader (master) <-------------------------------------------------------------------------+
 --   -> AudioCompressor (limiter) -> AudioDeviceOutput
--- The set code only talks to this module, never to audio instances directly.
+-- Music code only talks to this module, never to audio instances directly.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 
-local BlendJudge = require(ReplicatedStorage.Shared.Set.BlendJudge)
+local Crossfade = require(ReplicatedStorage.Shared.Music.Crossfade)
 
 local AudioEngine = {}
 AudioEngine.__index = AudioEngine
@@ -157,7 +157,7 @@ end
 
 -- 0 = deck A only, 1 = deck B only, equal-power in between.
 function AudioEngine.setCrossfader(self: AudioEngine, position: number)
-	local gainA, gainB = BlendJudge.gains(position)
+	local gainA, gainB = Crossfade.gains(position)
 	self._decks[1].crossfade.Volume = gainA
 	self._decks[2].crossfade.Volume = gainB
 end

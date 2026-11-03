@@ -68,6 +68,24 @@ function TrackPlayer.getLength(self: TrackPlayer): number
 	return self._audio.TimeLength
 end
 
+-- Raw samples (-1..1) for `seconds` of audio from `startTime`, or nil if Roblox can't provide them.
+-- GetWaveformAsync returns at most 8192 samples per call (measured Nov 2026), so this fetches one
+-- second at a time. Yields.
+function TrackPlayer.getWaveform(self: TrackPlayer, startTime: number, seconds: number, sampleRate: number): { number }?
+	local samples = {}
+	for second = 0, seconds - 1 do
+		local from = startTime + second
+		local ok, chunk = pcall(function()
+			return self._audio:GetWaveformAsync(NumberRange.new(from, from + 1), sampleRate)
+		end)
+		if not ok or type(chunk) ~= "table" or #chunk == 0 then
+			return nil
+		end
+		table.move(chunk, 1, #chunk, #samples + 1, samples)
+	end
+	return samples
+end
+
 function TrackPlayer.seek(self: TrackPlayer, time: number)
 	self._audio.TimePosition = math.clamp(time, 0, math.max(0, self._audio.TimeLength - 0.05))
 end

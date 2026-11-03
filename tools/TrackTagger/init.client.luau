@@ -18,6 +18,7 @@ local BeatMath = require(ReplicatedStorage.Shared.Util.BeatMath)
 local TaggerState = require(script.TaggerState)
 local TaggerUI = require(script.TaggerUI)
 local TapTempo = require(script.TapTempo)
+local TempoEstimate = require(script.TempoEstimate)
 local TrackExport = require(script.TrackExport)
 local TrackPlayer = require(script.TrackPlayer)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -27,6 +28,11 @@ local NUDGE = 0.005 -- seconds the downbeat moves per , or . press
 local NUDGE_FINE = 0.001 -- the same with Shift held
 local SEEK_WITHOUT_GRID = 2 -- seconds per arrow press before there is a beat grid
 local BEST_TAP_COUNT = 32
+local TAPS_BEFORE_CHECK = 8 -- taps needed before the result is compared with the BPM estimate
+-- The BPM guess listens to a few seconds at three spots and keeps the most confident result.
+local ESTIMATE_SPOTS = { 0.25, 0.5, 0.75 } -- fractions of the track length
+local ESTIMATE_SECONDS = 12
+local ESTIMATE_SAMPLE_RATE = 8000
 
 local SECTION_KEYS: { [Enum.KeyCode]: Types.SectionKind } = {
 	[Enum.KeyCode.One] = "intro",
@@ -46,6 +52,9 @@ local track = TrackPlayer.new(workspace)
 local state = TaggerState.new()
 local loadedAssetId: number? = nil
 local loading = false
+local loadCount = 0 -- bumps on every load, so a slow estimate for an older track is dropped
+local estimate: TempoEstimate.Estimate? = nil
+local estimating = false
 
 local function formatTime(seconds: number): string
 	return string.format("%d:%05.2f", seconds // 60, seconds % 60)
@@ -95,6 +104,37 @@ local function prefillFromAssetInfo(assetId: number)
 	end
 end
 
+-- Guesses the BPM in the background after a load. Taps still set the real grid.
+local function estimateTempo(forLoad: number)
+	estimating = true
+	local length = track:getLength()
+	local estimates = {}
+	for _, spot in ESTIMATE_SPOTS do
+		local samples = track:getWaveform(length * spot, ESTIMATE_SECONDS, ESTIMATE_SAMPLE_RATE)
+		if loadCount ~= forLoad then
+			return -- another track was loaded meanwhile; that load runs its own estimate
+		end
+		local guess = if samples then TempoEstimate.fromSamples(samples, ESTIMATE_SAMPLE_RATE) else nil
+		if guess then
+			table.insert(estimates, guess)
+		end
+		task.wait()
+	end
+	local best = TempoEstimate.best(estimates)
+	estimate = if best and best.confidence >= TempoEstimate.MIN_CONFIDENCE then best else nil
+	estimating = false
+	if #state.taps == 0 then
+		status(
+			if estimate
+				then string.format(
+					"BPM estimate ~%d. Press Space to play, then tap T on every beat to measure it exactly.",
+					math.round(estimate.bpm)
+				)
+				else "No clear BPM estimate for this track. Press Space to play, then tap T on every beat."
+		)
+	end
+end
+
 local function loadTrack()
 	if loading then
 		return
@@ -123,11 +163,12 @@ local function loadTrack()
 	end
 	TaggerUI.setFieldHint(ui, "artist", "artist")
 	TaggerUI.setExport(ui, "")
+	loadCount += 1
+	estimate = nil
 	task.spawn(prefillFromAssetInfo, assetId)
+	task.spawn(estimateTempo, loadCount)
 	redraw()
-	status(
-		string.format("Loaded (%s long). Press Space to play, then tap T on every beat.", formatTime(track:getLength()))
-	)
+	status(string.format("Loaded (%s long). Estimating the BPM...", formatTime(track:getLength())))
 end
 
 local function seekTo(time: number)
@@ -193,8 +234,16 @@ local function tap()
 	TaggerState.addTap(state, track:getPosition())
 	redraw()
 	local fit = state.fit
+	-- After a few taps, compare against the BPM estimate to catch half- or double-time tapping.
+	local hint = if fit
+			and estimate
+			and fit.tapCount >= TAPS_BEFORE_CHECK
+		then TempoEstimate.checkTaps(fit.bpm, estimate)
+		else nil
 	if not fit then
 		status(string.format("Keep tapping... (%d of at least %d)", #state.taps, TapTempo.MIN_TAPS))
+	elseif hint then
+		problem(hint)
 	elseif fit.tapCount < BEST_TAP_COUNT then
 		status(
 			string.format("%s BPM so far. Keep tapping for accuracy (%d/%d).", fit.bpm, fit.tapCount, BEST_TAP_COUNT)
@@ -303,6 +352,14 @@ local function readoutText(position: number, length: number, beat: number?): str
 		)
 	else
 		table.insert(lines, string.format("bpm       -   tap T on every beat while it plays (%d taps)", #state.taps))
+	end
+
+	if estimating then
+		table.insert(lines, "estimate  listening to the track...")
+	elseif estimate then
+		table.insert(lines, string.format("estimate  ~%d (rough guess from the audio)", math.round(estimate.bpm)))
+	else
+		table.insert(lines, "estimate  -   no clear beat found")
 	end
 
 	if state.firstBeat and beat then

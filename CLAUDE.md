@@ -5,7 +5,8 @@ Roblox DJ career game: start DJing in a dorm room, work up to headlining Ibiza.
 
 ## Current focus
 
-Milestone 1 (prototype), build order step 1: tooling, track data, Track Tagger. Build only the current milestone.
+Milestone 1 (prototype). Step 1 (tooling, track data, Track Tagger) is done and the 7 tracks are tagged.
+The set was redesigned on 2026-11-03 as a timing minigame (GDD "The DJ set"). Now: a first playable prototype of it (build order steps 2–3). Build only the current milestone.
 
 ## Stack
 

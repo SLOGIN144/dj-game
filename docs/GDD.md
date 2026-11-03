@@ -26,7 +26,7 @@ Every feature must serve at least one of these.
 1. **Earned career.** You start at the very bottom. Every venue and every piece of gear is earned, so Ibiza means something.
 2. **The set is the game.** A 3–5 minute set must be fun on its own, even with no progression around it.
 3. **Immersion.** Lights, crowd, sound and camera feel like real club footage. Players should love the clubs and the party.
-4. **Easy to start, room to master.** Sync is on from the start. Skill shows in transitions, EQ work and drop timing.
+4. **Easy to start, room to master.** Sync, EQ and the filter are run by the game. Skill shows in timing the start, the blend and the drop, and in reading the crowd; timing gets tighter as venues grow.
 5. **Real stakes.** Bad sets cost rep and bookings and can get you demoted.
 
 ### Feel references
@@ -37,7 +37,7 @@ Every feature must serve at least one of these.
 ### Anti-goals
 
 - Starting the player on a big stage. Existing Roblox DJ games do this and it's boring.
-- Button-prompt rhythm gameplay (hit the falling arrows). The player actually mixes.
+- Nonstop button-prompt rhythm gameplay (hit the falling arrows). Timing challenges sit on real DJ moments (start, blend, drop, build) and the music reacts to them.
 - Generic, AI-looking visuals.
 - Alcohol, real brands, real DJ names.
 
@@ -54,36 +54,54 @@ The set is the game; every other step feeds the next set.
 
 Good sets raise rep; rep unlocks the next venue tier.
 
-Inside a set, the micro loop is: load a track, sync it, blend with EQ and the crossfader, land the drop, and watch the crowd react (see The DJ set).
+Inside a set, the micro loop is: pick the next track, time its start, ride the crossfader through the blend, hit the drop, and watch the crowd react (see The DJ set).
 
 ## The DJ set
 
-A set lasts 3–5 minutes, has 2–3 transitions, and is judged live by the crowd's energy. It is the heart of the game, so it gets the most polish.
+A set lasts 3–5 minutes, has 3–4 transitions, and is judged live by the crowd's energy. It is the heart of the game, so it gets the most polish.
+
+The set is a timing minigame built on real DJ moments, not a realistic mixer. Sync, EQ and the filter are run by the game. The player times the moments that make a mix feel good (starting the next track, riding the crossfader through the blend, hitting the drop) and reads the crowd to pick the next track. The music reacts to every input, so a good run sounds like a good mix and a miss is heard, but nothing ever stops the music.
 
 ### Structure of a set
 
-1. **Before:** the player picks tracks for their crate (6 slots at the start).
-2. **Start:** deck A is loaded with the first track; the crowd starts at the venue's start energy.
-3. **During:** the player mixes track to track, aiming for 2–3 transitions. Incoming tracks start from their cue point, not from 0:00.
-4. **End:** when the venue's set timer runs out, the playing track fades over 8 bars, then the results screen opens. If a transition is in progress, wait for it to finish (max 16 bars).
+1. **Before:** the player picks tracks for their crate (6 slots at the start). The prototype skips this and uses every tagged track.
+2. **Start:** the first track plays from its cue point; the crowd starts at the venue's start energy.
+3. **While a track plays (about a minute):** hype challenges come up on its builds and drops. About 15 seconds before the next transition, 2–3 track cards appear for choosing the next track.
+4. **Transition (about 20 seconds):** three moments: start, blend, drop.
+5. **Repeat:** 3–4 transitions per set.
+6. **End:** when the venue's set timer runs out, the playing track fades over 8 bars, then the results screen opens. A transition in progress finishes first (max 16 bars).
 
-### Decks and controls
+The game decides when each transition happens, from the tagged track data. The outgoing track mixes out once it has played its drop for a while (about 16 bars, in `Balance.luau`), on a phrase boundary. The incoming track starts 8 bars before its first drop, so the drop lands exactly at the end of the blend.
 
-The starter controller copies what a typical beginner 2-deck controller has.
+### The transition: three moments
 
-| Control | Per | What it does |
-| --- | --- | --- |
-| Play / Pause | deck | starts or stops the track |
-| Cue | deck | jumps to the cue point; hold to preview |
-| Load | deck | loads a track from the crate |
-| Channel fader | deck | channel volume |
-| EQ low / mid / high | deck | kill to +6 dB per band |
-| Filter | deck | left = low-pass, right = high-pass, centre = off |
-| Sync | deck | matches tempo and beat phase to the other deck |
-| Tempo fader | deck | manual tempo, ±8% on starter gear |
-| Crossfader | mixer | blends deck A and deck B |
+The **main button** is Space on PC (or a click on the on-screen button) and a big round button on touch. The **crossfader** is dragged with the mouse or a finger, or moved with ← / → on PC.
 
-Better gear unlocks: hot cues (4, then 8), loops (4/8/16 beats), an FX unit (echo first, then reverb and flanger), key lock, ±16% tempo range, and decks 3 and 4.
+| Moment | What the player sees | What the player does | Perfect | Miss |
+| --- | --- | --- | --- | --- |
+| Start | a 4-3-2-1 countdown on the beat and a ring closing on the "1" | press the main button on the 1 | the next track comes in clean | the track still starts, but sounds off-beat for one bar before sync pulls it in |
+| Blend | a green zone moving along the crossfader from deck A to deck B over 8 bars | keep the crossfader inside the zone | 90%+ of the time in the zone: a seamless blend | under 60%: the blend sounds bumpy (the audio follows the real crossfader position) |
+| Drop | a ring closing on the incoming track's drop | press the main button on the drop | **Perfect drop:** confetti or CO2, a light blast, a camera hit and a cheer | the drop plays without the payoff |
+
+**Good** sits between Perfect and Miss: a smaller reward, and it keeps the combo.
+
+- The bass swap happens by itself halfway through the blend: the outgoing low EQ goes down as the incoming one comes up.
+- Timing windows (starting values in `Balance.luau`): Perfect within 50 ms of the target beat, Good within 120 ms. An audio latency offset is applied, with a calibration step in Settings.
+- No input ever stops the music: a missed or skipped moment always resolves on its own.
+
+### Hype challenges
+
+While a track plays, its tagged sections create short challenges between transitions:
+
+- **Release:** during a build, hold the main button (the filter sweeps up and the tension rises) and let go exactly on the drop.
+- **Hit:** one press on a marked beat for an effect: a confetti popper at the house party, CO2 in clubs.
+- At most one hype challenge per section and none during a transition. They are graded Perfect / Good / Miss like the moments, with smaller energy changes.
+
+### Picking the next track
+
+- About 15 seconds before a transition, 2–3 cards appear, each showing title, genre and energy (1–5). Keys 1–3 or a tap pick one; if the player doesn't pick, the game takes the first card.
+- Cards only offer tracks the current gear can sync (within its tempo range: ±8% on starter gear) that haven't been played earlier in the set.
+- **Crowd wishes:** now and then a speech bubble over the crowd asks for a genre or for "more energy" (a higher energy rating). Picking a card that matches gives a bonus.
 
 ### Audio signal chain
 
@@ -95,47 +113,46 @@ Deck B: AudioPlayer -> AudioEqualizer -> AudioFilter -> AudioFader (channel) -> 
                                                                                                        |
           AudioFader (master) <---------------------------------------------------------------------+
           -> AudioCompressor (limiter) -> AudioDeviceOutput
-          -> AudioAnalyzer (loudness for visuals and dead-air detection)
+          -> AudioAnalyzer (loudness for visuals)
 ```
 
-- The crossfader uses an equal-power curve by default.
-- FX insert after the filter on each channel (later).
+- The crossfader uses an equal-power curve and follows the player's crossfader exactly.
+- The game drives the EQs (the bass swap) and the filters (Release challenges); the player never turns a knob.
+- FX insert after the filter on each channel (later, with gear).
 - `PlaybackSpeed` changes tempo and pitch together. Key lock (a gear unlock) compensates with `AudioPitchShifter`.
 
 ### Beat clock and sync
 
-- Every track has a hand-tagged BPM and first-beat offset (see Audio and music).
+- Every track has a tagged BPM and first-beat offset (see Audio and music).
 - Beat position in a track = (TimePosition − firstBeat) × BPM / 60. Effective BPM = BPM × PlaybackSpeed.
-- The master tempo comes from the louder deck.
-- **Sync:** set the incoming deck's PlaybackSpeed so its effective BPM matches the master, then nudge TimePosition to the nearest beat. Re-check every bar to correct drift.
-- **Phase meter:** shows the phase error between decks. Green under 1/16 beat.
-- **Sync off:** the player uses the tempo fader and nudge (jog) controls. Each transition finished with sync off adds +10% to the set's final rep (max +30%). The Pro Sync game pass keeps 70% of that bonus with sync on.
-- **Tempo range:** if two tracks' BPMs are further apart than the gear's range, sync can't match them. This makes track selection matter (124 to 128 works on ±8%; 124 to 140 doesn't).
+- The master tempo comes from the outgoing deck.
+- **Sync is always on:** the incoming deck's PlaybackSpeed is set so its effective BPM matches the master, then TimePosition is nudged to the nearest beat. It's re-checked every bar to correct drift. A Miss on the Start moment offsets the phase for one bar, then sync pulls it back.
+- **Tempo range:** if two tracks' BPMs are further apart than the gear's range, sync can't match them, so they are never offered together on cards (124 to 128 works on ±8%; 124 to 140 doesn't).
 
 ### Crowd energy
 
 Crowd energy runs from 0 to 100, updates every beat, and is shown on a meter and in the crowd itself. All numbers below live in `Balance.luau` and are starting points for tuning.
 
-Every beat:
+- **Drift (every beat):** energy moves 2% of the gap toward the current section's pull (intro low, build rising, drop high, breakdown medium), scaled by genre match. The crowd lives with the music even between inputs.
 
-- **Drift:** energy moves 2% of the gap toward the current section's pull (intro low, build rising, drop high, breakdown medium), scaled by genre match.
-- **Boredom:** −0.15 per beat if one track plays over 2 minutes without a transition.
-- **Dead air:** −2 per beat when master loudness stays below a threshold for over 1 second. The crowd boos.
-
-| Event | Detected when | Effect |
+| Event | When | Effect |
 | --- | --- | --- |
-| Smooth blend | both decks audible for 8+ beats, phase error under 1/16 beat, no bass clash | +6 |
-| Bass clash | both low EQs above −6 dB and both channels above 50% for 4+ beats | −1.5 per beat |
-| Train wreck | phase error over 1/8 beat while both decks are audible | −3 per beat, crowd reacts |
-| Perfect drop | incoming drop lands while the outgoing deck is at 20% or less and energy is 50+ | +12, confetti/CO2, camera hit |
-| Build bonus | low cut or filter sweep held 8+ bars before a drop, released on it | +4 on that drop |
+| Start or Blend moment | graded | Perfect +6, Good +3, Miss −4 |
+| Drop moment | graded | Perfect +12, Good +5, Miss −4 |
+| Hype challenge | graded | Perfect +3, Good +1, Miss −1 |
+| Crowd wish met | the picked card matches the speech bubble | +5 |
 | Genre match | track genre is in the venue's preferred list | ×1.2 on all gains |
 | Repeat track | track used in the last 3 sets at this venue | ×0.7 on all gains |
-| Crowd request | requested genre played within 90 seconds | +5 |
+
+### Combo
+
+- Each Perfect raises the combo one step: ×1 → ×1.5 → ×2 → ×3 (max). Good keeps it, Miss resets it to ×1.
+- The combo multiplies energy gains, not losses.
+- It is a small number next to the energy meter; no points fly across the screen.
 
 ### Grading and rewards
 
-The set's score is 0.6 × average energy + 0.25 × peak energy + 5 per smooth blend − 8 per train wreck − 3 per second of dead air, clamped to 0–100.
+The set's score is 0.6 × average energy + 0.25 × peak energy + 4 per Perfect drop − 3 per Miss, clamped to 0–100.
 
 | Grade | Score | Rep multiplier |
 | --- | --- | --- |
@@ -146,7 +163,7 @@ The set's score is 0.6 × average energy + 0.25 × peak energy + 5 per smooth bl
 | D | 35–49 | −0.3 (lose rep) |
 | F | under 35 | −0.8 (lose rep) |
 
-- **Rep** = venue base rep × grade multiplier × sync-off bonus.
+- **Rep** = venue base rep × grade multiplier.
 - **Cash** = full venue pay at C or better, half below.
 - **Followers** = venue capacity × a per-grade rate.
 - **Demotion:** three D/F sets in a row at a tier trigger a warning from the manager. A fourth means bookings only at the previous tier until you get a B or better there.
@@ -157,45 +174,52 @@ The set's score is 0.6 × average energy + 0.25 × peak energy + 5 per smooth bl
 - The crowd reacts in tiers by energy (see Venues and crowd).
 - Lights follow the beat and energy; drops trigger the venue's big moment.
 - The camera cuts faster and shakes slightly on drops.
-- Small floating text only for key events ("Smooth blend", "Perfect drop", "Clash!"). No score spam.
-- The crowd cheer swells on drops; whistles at peaks; boos on train wrecks.
+- Small floating text only for grades and key events ("Perfect", "Good", "Miss", "Perfect drop"). No score spam.
+- The crowd cheer swells on drops; whistles at peaks; a groan on a missed drop.
+
+### Difficulty
+
+Set per venue tier in `Balance.luau`:
+
+- Timing windows are wide in the dorm and at the house party and tighten in clubs.
+- The blend zone gets narrower and moves less evenly.
+- Bigger venues have more transitions per set and more frequent crowd wishes.
+- Better gear adds new challenge types (see Gear).
 
 ### Helping beginners
 
-- **Track overview bar** per deck: coloured sections (intro, build, drop, breakdown, outro), beat ticks, playhead and drop markers. Roblox can't hand us a precomputed waveform, so this is drawn from tagged metadata.
-- **"Mix here" hint:** a zone on the incoming track showing where to start it so its drop lands right after the transition. Shown on starter gear and can be turned off.
-- **Dorm tutorial** teaches in 5 steps: play, crossfade, bass swap with EQ, sync, the drop.
+- **Track overview bar** per deck: coloured sections (intro, build, drop, breakdown, outro), beat ticks, playhead, drop markers and the real waveform, read in the background with `AudioPlayer:GetWaveformAsync` as soon as a track is picked.
+- **Readable challenges:** every challenge shows what to press and when (ring, countdown, zone), so it works without reading instructions.
+- **Dorm tutorial** teaches in 5 steps: the Start moment, the blend, the Drop moment, a Release challenge, picking a card.
 
 ## Controls and UI
 
-During a set, a 2D mixer panel sits at the bottom of the screen while the 3D scene plays above it. The same panel works with mouse, keyboard and touch.
+During a set, a 2D DJ panel sits at the bottom of the screen while the 3D scene plays above it. Timing challenges pop up over the panel. The same panel works with mouse, keyboard and touch.
 
 ### Set screen layout
 
-- **Bottom ~35%:** mixer panel styled like the player's current controller. Deck A on the left, mixer in the centre, deck B on the right.
-- **Top strip:** two stacked track overview bars plus the phase meter.
-- **Top right:** crowd energy meter and set timer.
+- **Bottom ~35%:** DJ panel styled like the player's current controller. Deck A on the left, deck B on the right, the crossfader with its blend zone in the centre, and the main button. Timing rings and countdowns pop up over the panel.
+- **Above the panel, right:** the track cards when it's time to pick.
+- **Top strip:** two stacked track overview bars.
+- **Top right:** crowd energy meter, combo and set timer.
 - **Rest of the screen:** the 3D scene with the camera director.
-- **H** hides the panel (clip mode); only the energy meter stays.
+- **H** hides the panel (clip mode); only the energy meter stays and challenges resolve on their own.
 
 ### PC defaults (rebindable later)
 
-| Action | Deck A | Deck B |
-| --- | --- | --- |
-| Play / Pause | Q | P |
-| Cue | A | L |
-| Sync | Z | M |
-| Load selected track | 1 | 2 |
-
-- **Crossfader:** hold ← / → (Shift for slow), or drag.
-- **Faders and knobs:** drag with the mouse; scroll wheel on knobs; double-click resets a knob to centre.
-- **Camera:** C cycles or locks a shot.
+| Action | Key |
+| --- | --- |
+| Main button (start, drop, hype challenges) | Space, or click the on-screen button |
+| Crossfader | hold ← / →, or drag |
+| Pick a track card | 1 / 2 / 3, or click |
+| Hide the panel (clip mode) | H |
+| Camera | C cycles or locks a shot |
 
 ### Touch
 
-- Minimum touch target about 48 px on a phone.
-- Faders: drag along the track. Knobs: vertical drag. Double-tap resets a knob.
-- Multi-touch must work: one finger on the crossfader, another on an EQ knob.
+- Minimum touch target about 48 px on a phone; the main button is bigger (about 96 px), bottom centre.
+- One thumb on the main button, the other on the crossfader: multi-touch must work.
+- Cards are tapped.
 
 ### Other screens
 
@@ -206,7 +230,7 @@ During a set, a 2D mixer panel sits at the bottom of the screen while the 3D sce
 
 ### UI style
 
-Dark, clean and rounded, with a neon accent taken from the current venue's colour. One clean built-in sans font. No popups or clutter during a set.
+Dark, clean and rounded, with a neon accent taken from the current venue's colour. One clean built-in sans font. No clutter during a set: the only pop-ups are the timing challenges and the track cards, over the DJ panel, never over the middle of the 3D scene.
 
 ## Camera and cutscenes
 
@@ -271,7 +295,7 @@ Rep thresholds live in `Balance.luau`. Rendered NPCs are far fewer than the fict
 ### Bookings
 
 - Gig offers arrive on the phone: venue, in-game date, pay, crowd size, preferred genres, set length and required gear tier.
-- **Overreach gigs:** sometimes an offer is above your gear tier. Accept it and the missing controls stay locked and the crowd's energy decays faster. A B or better pays ×2 rep. High risk, high reward.
+- **Overreach gigs:** sometimes an offer is above your gear tier. Accept it and the missing challenges and effects stay locked and the crowd's energy decays faster. A B or better pays ×2 rep. High risk, high reward.
 - **Opening slots (tier 3+):** you open for a fictional headliner. Your goal is to warm the crowd, keeping energy in a 50–75 band. Holding it over 85 too long costs a "stole the headliner's thunder" penalty. Reward: big rep, followers, and the headliner's favour in the story.
 - **Later (tier 5+):** NPC DJs open for you, so your set starts with a warmed-up crowd.
 
@@ -281,11 +305,13 @@ Designs are inspired by real gear, with fictional names and logos. Never use rea
 
 | Tier | Placeholder name | Inspired by | Unlocks |
 | --- | --- | --- | --- |
-| 0 | Laptop + Volt 2 | beginner 2-deck controller | 2 decks, EQ, filter, crossfader, sync |
-| 1 | Volt 4 | mid-range controller | 4 hot cues, loops, echo FX |
-| 2 | CDX-3000 players + MX-900 mixer | club-standard media players and mixer | key lock, 3 FX, ±16% tempo, club respect bonus |
-| 3 | Nexus 4-deck setup | 4-channel club setup | decks 3 and 4, 8 hot cues, more FX |
+| 0 | Laptop + Volt 2 | beginner 2-deck controller | the three transition moments, Release and Hit challenges, ±8% tempo |
+| 1 | Volt 4 | mid-range controller | Echo-out challenge (end a track on an echo), bigger payoffs |
+| 2 | CDX-3000 players + MX-900 mixer | club-standard media players and mixer | key lock, ±16% tempo (more tracks fit the cards), CO2 and strobe challenges, club respect bonus |
+| 3 | Nexus 4-deck setup | 4-channel club setup | double drop challenge (two tracks drop together), more FX |
 | 4 | Flagship rig | top-end club setup | all FX, custom light cues |
+
+Gear tiers 1–4 unlock new challenge types instead of new knobs. The exact challenges above tier 0 are first proposals (TBD).
 
 - **Party gear (tiers 1–2):** you bring your own speaker and party lights. A better speaker raises crowd capacity; better lights raise energy gain.
 - **Headphones:** cosmetic.
@@ -415,7 +441,7 @@ Verify each property in the docs before use.
 
 ## Audio and music
 
-All music is Roblox-licensed audio from the Creator Store, and everything the game knows about a track comes from a hand-tagged data file.
+All music is Roblox-licensed audio from the Creator Store, and everything the game knows about a track comes from a tagged data file (see Track Tagger).
 
 ### Licensing rules (hard requirements)
 
@@ -460,10 +486,10 @@ One entry per track in `src/shared/Config/Tracks.luau`. Section positions are in
 
 ### Track Tagger (dev-only tool, build first)
 
-- Runs in Studio play mode and is never shipped.
-- Load a track, tap a key on the beat to compute BPM, mark the first downbeat, and mark section starts snapped to bars.
-- Prints the finished Lua table to the output window to paste into `Tracks.luau`.
-- Without accurate BPM and offsets, sync and scoring break, so every track goes through it.
+- Runs in its own Studio place in Play mode and is never shipped.
+- Works a track out from its audio by itself (`AudioPlayer:GetWaveformAsync`): exact BPM, first downbeat, sections, cue point and a starting energy rating, and shows the real waveform. Keys stay for fixing a result by ear (tap tempo, mark the downbeat, mark sections snapped to bars).
+- "Auto-tag picks" runs through `tools/TrackTagger/Picks.luau` and prints the finished entries to paste into `Tracks.luau`.
+- Without accurate BPM and offsets, sync and the timing challenges break, so every track goes through it.
 
 ### Sound effects
 
@@ -482,7 +508,6 @@ Free players can reach everything and have fun; Robux buys speed, comfort and st
 
 | Pass | Gives |
 | --- | --- |
-| Pro Sync | keeps 70% of the sync-off rep bonus while using sync |
 | 2x Cash | double gig pay |
 | Bigger Crate | +4 crate slots |
 | VIP | VIP tag, VIP lounge in the hub, small daily cash bonus |
@@ -562,8 +587,8 @@ dj-game/
     server/   -> ServerScriptService.Server
       Services/ PlayerData, Career, Booking, Shop, SetResults, Monetization, Leaderboard
     client/   -> StarterPlayer.StarterPlayerScripts.Client
-      Controllers/ AudioEngine, BeatClock, Mixer, Scoring, Crowd, LightShow,
-                   CameraDirector, Cutscene, UI, Phone
+      Controllers/ AudioEngine, BeatClock, SetDirector, Minigame, Scoring, Crowd,
+                   LightShow, CameraDirector, Cutscene, UI, Phone
       UI/ (components)
   tools/
     TrackTagger/           -- dev-only, never shipped
@@ -571,7 +596,7 @@ dj-game/
 
 ### Client and server
 
-- **Client:** audio engine, mixer, beat clock, live scoring, crowd, lights, camera and UI. Anything timing-critical stays local.
+- **Client:** audio engine, beat clock, set minigame, live scoring, crowd, lights, camera and UI. Anything timing-critical stays local.
 - **Server:** player data, career state, bookings, shop, rewards and leaderboards.
 - **Set flow:** the server issues a set token (venue, tracks, set length, start time) → the client plays the set → the client sends a set report (event list + summary stats) → the server validates it (plausible duration, owned tracks, gear-allowed actions, score consistent with events) → the server computes and grants rewards.
 - Never trust client cash or rep values. Type-check and rate-limit every remote.
@@ -599,11 +624,11 @@ Goal: prove that one 4-minute set is fun. It's done when a new player can mix tw
 
 ### In scope
 
-- [ ] Repo and tooling: Rojo project, Rokit, Selene, StyLua, `CLAUDE.md`, `docs/GDD.md`, git.
-- [ ] Track Tagger tool, and 6–8 licensed house/tech house tracks tagged (Filip picks the tracks).
-- [ ] Audio engine: 2 decks, play/pause/cue, channel faders, 3-band EQ, filter, crossfader, sync, master limiter.
-- [ ] BeatClock, sync and phase meter.
-- [ ] Mixer UI for mouse, keyboard and touch, plus track overview bars with sections and "mix here" hints.
+- [x] Repo and tooling: Rojo project, Rokit, Selene, StyLua, `CLAUDE.md`, `docs/GDD.md`, git.
+- [x] Track Tagger tool, and 6–8 licensed house/tech house tracks tagged (Filip picks the tracks).
+- [ ] Audio engine: 2 decks, crossfader, 3-band EQ and filter (driven by the game), always-on sync, master limiter.
+- [ ] BeatClock and sync.
+- [ ] Set minigame and its UI for mouse, keyboard and touch: the three transition moments, hype challenges, track cards, combo, and track overview bars.
 - [ ] Crowd energy model, events, grade and results screen (no saving yet).
 - [ ] Dorm room blockout with practice mode and a 5-step tutorial.
 - [ ] Friend's house party blockout: about 15 NPC dancers with 5 reaction tiers, party lights reacting to beat and energy, confetti on a Perfect drop.
@@ -615,6 +640,7 @@ Goal: prove that one 4-minute set is fun. It's done when a new player can mix tw
 ### Acceptance criteria
 
 - A first-time player finishes the tutorial and a full house party set without outside help.
+- Every challenge reads at a glance: a first-time player can tell what to press and when.
 - A synced transition holds phase error under 1/16 beat for 30+ seconds.
 - A Perfect drop fires confetti, a cheer, a light blast and a camera hit on the exact beat.
 - No errors in the output during a full set, and 60 FPS on Filip's PC.
@@ -624,7 +650,7 @@ Goal: prove that one 4-minute set is fun. It's done when a new player can mix tw
 
 1. Tooling, track data and the Track Tagger.
 2. Audio engine and BeatClock, tested with the debug overlay only.
-3. Mixer UI.
+3. Set minigame (transition moments, hype challenges, track cards) and its UI.
 4. Scoring and results.
 5. Venue blockouts, crowd, lights and camera.
 6. Tutorial and a polish pass.
@@ -661,6 +687,7 @@ Launch happens only when the core loop is polished and has no known bugs; big co
 - [ ] Genre list, after checking how much house and techno the Creator Store has.
 - [ ] Remix and hit mechanic.
 - [ ] Pass and product prices.
+- [ ] A pass to replace Pro Sync (removed when the set became a timing minigame).
 - [ ] What Roblox allows for sponsor banners.
 - [ ] More art references: a colour palette per venue.
 
@@ -671,7 +698,11 @@ Launch happens only when the core loop is polished and has no known bugs; big co
 | Beat / bar / phrase | 4 beats = 1 bar; phrases are 8, 16 or 32 bars. Transitions and camera cuts land on these boundaries. |
 | BPM | tempo in beats per minute |
 | Beatmatch | aligning two tracks' tempo and beat phase |
-| Sync | automatic beatmatch |
+| Sync | automatic beatmatch; always on in this game |
+| Moment | one of the three timing challenges in a transition: start, blend, drop |
+| Hype challenge | a short timing challenge while a track plays: Release (hold through a build, let go on the drop) or Hit |
+| Perfect / Good / Miss | the grade for a timing challenge |
+| Combo | a multiplier on energy gains that grows with each Perfect and resets on a Miss |
 | Phase | position inside a beat; matched phase means the kicks land together |
 | Crossfader | slider blending deck A and deck B |
 | EQ (low / mid / high) | bass, mids and treble per channel; a bass swap cuts the bass on one deck while bringing it in on the other |

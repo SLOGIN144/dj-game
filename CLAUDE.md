@@ -1,12 +1,12 @@
-# DJ Career Game
+# DJ Club Tycoon
 
-Roblox DJ career game: start DJing in a dorm room, work up to headlining Ibiza.
+Roblox DJ club tycoon: build your club button by button, from a dorm room to an Ibiza beach club, with real music mixed on the beat.
 **The full design and build spec is [docs/GDD.md](docs/GDD.md). Read it at the start of every session.**
 
 ## Current focus
 
-Milestone 1 (prototype). Step 1 (tooling, track data, Track Tagger) is done and the 7 tracks are tagged.
-The set was redesigned on 2026-11-03 as a timing minigame (GDD "The DJ set"). Now: a first playable prototype of it (build order steps 2–3). Build only the current milestone.
+Milestone 1 (tycoon prototype). Step 1 (tooling, track data, Track Tagger) is done and the 7 tracks are tagged.
+On 2026-11-03 the game became a club tycoon; the old timing-set prototype is kept under the git tag `set-prototype`. Next: build order step 2 (street, plots, buttons, income, register). Build only the current milestone.
 
 ## Stack
 
@@ -28,7 +28,7 @@ The set was redesigned on 2026-11-03 as a timing minigame (GDD "The DJ set"). No
 
 - Game: `rojo serve` (port 34872), connect from the Rojo plugin in the game place.
 - Tagger: `rojo build tagger.project.json -o TrackTagger.rbxl` once, open it, then `rojo serve tagger.project.json` (port 34873).
-- Set prototype: `rojo build prototype.project.json -o Prototype.rbxl`, open it, press Play (live sync: `rojo serve prototype.project.json`, port 34874). Set the Workspace attribute `SetAutoPlay` to let it play itself for testing.
+- Old set prototype (removed in build step 2; tag `set-prototype`): `rojo build prototype.project.json -o Prototype.rbxl`, open it, press Play (live sync: `rojo serve prototype.project.json`, port 34874). Set the Workspace attribute `SetAutoPlay` to let it play itself for testing.
 - Check before committing: `selene src tools tests` and `stylua --check src tools tests`.
 - Rokit tools live in `%USERPROFILE%\.rokit\bin`.
 

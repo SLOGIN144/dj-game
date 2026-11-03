@@ -8,4 +8,5 @@ return {
 	sign = Vector3.new(0, 6, -38),
 	register = Vector3.new(12, 0, -22),
 	buttonSlots = { Vector3.new(-7, 0, -14), Vector3.new(0, 0, -14), Vector3.new(7, 0, -14) },
+	padSize = 5, -- width and depth of a button pad
 }

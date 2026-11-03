@@ -141,7 +141,8 @@ function PlotView.showItem(plot: Model, locationId: string, itemId: string, anim
 	local model = Instance.new("Model")
 	model.Name = itemId
 	model.Parent = child(plot, "Items")
-	for _, spec in Blockouts[locationId].items[itemId] or {} do
+	local specs: { Types.PartSpec } = Blockouts[locationId].items[itemId] or {}
+	for _, spec in specs do
 		local part = PartFactory.build(spec, origin(plot), model)
 		if animate then
 			local target = part.CFrame
@@ -174,7 +175,7 @@ function PlotView.setPads(plot: Model, pads: { Pad }, onTouched: (itemId: string
 		pad.Name = "Pad_" .. entry.item.id
 		pad.Anchored = true
 		pad.CanCollide = false
-		pad.Size = Vector3.new(5, 0.3, 5)
+		pad.Size = Vector3.new(PlotLayout.padSize, 0.3, PlotLayout.padSize)
 		pad.CFrame = origin(plot) * CFrame.new(slot + Vector3.new(0, 0.15, 0))
 		pad.Color = PAD_COLOUR
 		pad.Material = Enum.Material.Neon

@@ -66,7 +66,8 @@ Around it, every few minutes: a club event, a goal from the location's character
 
 - Buttons are pads on the floor with a name and a price. Stepping on one with enough cash buys it; the part appears with a short build animation and a sound.
 - Buttons unlock in a fixed order. The next 2–3 are always visible, so the player has a choice and a goal in sight; later ones stay hidden.
-- Each button is one entry in `Config/Items.luau`: id, location, order, display name, cost, what it gives, and the name of the model it shows. The world models live in the place file, one folder per location, named to match.
+- Each button is one entry in `Config/Items.luau`: id, location, order, display name, kind, and the look it shows. Costs and incomes come from `Pricing` (see Money).
+- Blockouts are built from code at server start (layout data in `Config/`), so the whole world is in git. Imported art later goes into ServerStorage as models named after their item and replaces the blockout parts.
 
 | Item kind | Gives | Examples |
 | --- | --- | --- |
@@ -86,6 +87,7 @@ Around it, every few minutes: a club event, a goal from the location's character
 | Ibiza beach club | ~25 | 5–6 h | 100+ (fewer rendered) | sunset orange + magenta |
 
 - About 10 hours from the dorm to a finished Ibiza.
+- **Many more locations later.** Filip wants far more than these four (between them and after Ibiza). The four are the spine for the prototype and launch planning; the full list is an open question, and every system must take a new location as one more `Locations.luau` entry with its items.
 - When every button is bought, a **Move on** button appears. The plot turns into the next location and building starts again with pricier parts that pay more. Cash, tracks, star DJs and goals carry over.
 - **Rebirth (world tour):** after Ibiza, in a later update.
 - Launch ships all four locations; Milestone 1 builds the first two.
@@ -485,6 +487,7 @@ Launch happens only when the core loop is polished and has no known bugs; big co
 ## Open questions
 
 - [ ] Game name.
+- [ ] The full location list (Filip wants many more than four).
 - [ ] Monetization for the tycoon: which passes and products, and prices.
 - [ ] Offline earnings: yes or no, and how much.
 - [ ] Rebirth: what it resets, what it keeps, and the world tour.

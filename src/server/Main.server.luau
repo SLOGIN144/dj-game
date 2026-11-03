@@ -1,0 +1,2 @@
+--!strict
+-- Server entry point. Services in Services/ get started from here once they exist (Milestone 2+).

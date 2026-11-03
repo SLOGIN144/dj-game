@@ -1,0 +1,2 @@
+--!strict
+-- Client entry point. Controllers in Controllers/ get started from here once they exist (build step 2+).

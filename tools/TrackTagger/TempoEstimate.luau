@@ -22,7 +22,7 @@ export type Estimate = {
 	confidence: number, -- 0..1, how strongly the audio repeats at that tempo
 }
 
--- Loudness rises per envelope step: log-compressed RMS, keeping only increases, mean removed.
+-- Loudness rises per envelope step: log-compressed RMS, keeping only increases.
 local function onsetEnvelope(samples: { number }, sampleRate: number): { number }
 	local hop = math.max(1, math.floor(sampleRate / TempoEstimate.ENVELOPE_RATE))
 	local envelope = {}
@@ -36,15 +36,19 @@ local function onsetEnvelope(samples: { number }, sampleRate: number): { number 
 		table.insert(envelope, math.max(0, loudness - previous))
 		previous = loudness
 	end
-
-	local mean = 0
-	for _, value in envelope do
-		mean += value / #envelope
-	end
-	for i, value in envelope do
-		envelope[i] = value - mean
-	end
 	return envelope
+end
+
+local function withoutMean(values: { number }): { number }
+	local mean = 0
+	for _, value in values do
+		mean += value / #values
+	end
+	local centred = table.create(#values, 0)
+	for i, value in values do
+		centred[i] = value - mean
+	end
+	return centred
 end
 
 local function autocorrelation(envelope: { number }, lag: number): number
@@ -58,8 +62,12 @@ end
 -- Estimates the tempo of a stretch of audio (a few seconds of a section with a beat works best).
 -- Returns nil for silence or audio too short to judge.
 function TempoEstimate.fromSamples(samples: { number }, sampleRate: number): Estimate?
-	local envelope = onsetEnvelope(samples, sampleRate)
-	local rate = TempoEstimate.ENVELOPE_RATE
+	return TempoEstimate.fromEnvelope(onsetEnvelope(samples, sampleRate), TempoEstimate.ENVELOPE_RATE)
+end
+
+-- Same, from an onset envelope (loudness rises) with `rate` values per second.
+function TempoEstimate.fromEnvelope(onsets: { number }, rate: number): Estimate?
+	local envelope = withoutMean(onsets)
 	local shortestLag = math.floor(60 * rate / TempoEstimate.MAX_BPM)
 	local longestLag = math.ceil(60 * rate / TempoEstimate.MIN_BPM)
 	local energy = autocorrelation(envelope, 0)

@@ -46,6 +46,7 @@ local FIELDS: { { name: string, width: number, default: string } } = {
 }
 
 local HELP = table.concat({
+	"Load finds the tempo, first beat, sections and cue by itself. The keys below are only for fixing things.",
 	"Space play/pause   ← → jump 1 bar (Shift: 1 beat)   Home back to bar 1   click the bar above to jump there",
 	"T tap on every beat (32 taps is best)   R reset taps   B whole-BPM rounding on/off",
 	"D mark the first downbeat (press on a 1)   , and . nudge it 5 ms earlier/later (Shift: 1 ms)",
@@ -57,11 +58,13 @@ export type UI = {
 	gui: ScreenGui,
 	assetBox: TextBox,
 	loadButton: TextButton,
+	autoButton: TextButton,
 	status: TextLabel,
 	fields: { [string]: TextBox },
 	overview: TextButton,
 	overviewHint: TextLabel,
 	sectionLayer: Frame,
+	waveformLayer: Frame,
 	tickLayer: Frame,
 	markerLayer: Frame,
 	playhead: Frame,
@@ -200,7 +203,14 @@ function TaggerUI.new(playerGui: Instance): UI
 	loadButton.Text = "Load"
 	corner(loadButton, 6)
 	loadButton.Parent = loadRow
-	local status = textLabel(loadRow, "Paste a track's asset ID and press Load.", UDim2.new(0.75, -106, 1, 0), 3)
+	local autoButton = loadButton:Clone()
+	autoButton.Name = "AutoButton"
+	autoButton.Size = UDim2.new(0, 150, 1, 0)
+	autoButton.LayoutOrder = 3
+	autoButton.BackgroundColor3 = COLORS.panel
+	autoButton.Text = "Auto-tag picks"
+	autoButton.Parent = loadRow
+	local status = textLabel(loadRow, "Paste a track's asset ID and press Load.", UDim2.new(0.75, -264, 1, 0), 4)
 	status.Name = "Status"
 	status.TextColor3 = COLORS.dim
 	status.TextTruncate = Enum.TextTruncate.AtEnd
@@ -236,15 +246,16 @@ function TaggerUI.new(playerGui: Instance): UI
 	overviewHint.TextXAlignment = Enum.TextXAlignment.Center
 	overviewHint.TextColor3 = COLORS.dim
 	local sectionLayer = overviewLayer(overview, "Sections", 1)
-	local tickLayer = overviewLayer(overview, "Ticks", 2)
-	local markerLayer = overviewLayer(overview, "Markers", 3)
+	local waveformLayer = overviewLayer(overview, "Waveform", 2)
+	local tickLayer = overviewLayer(overview, "Ticks", 3)
+	local markerLayer = overviewLayer(overview, "Markers", 4)
 	local playhead = Instance.new("Frame")
 	playhead.Name = "Playhead"
 	playhead.BorderSizePixel = 0
 	playhead.BackgroundColor3 = COLORS.text
 	playhead.AnchorPoint = Vector2.new(0.5, 0)
 	playhead.Size = UDim2.new(0, 2, 1, 0)
-	playhead.ZIndex = 4
+	playhead.ZIndex = 5
 	playhead.Visible = false
 	playhead.Parent = overview
 
@@ -269,7 +280,7 @@ function TaggerUI.new(playerGui: Instance): UI
 	readout.TextSize = 15
 	readout.TextYAlignment = Enum.TextYAlignment.Top
 
-	local help = textLabel(root, HELP, UDim2.new(1, 0, 0, 90), 6)
+	local help = textLabel(root, HELP, UDim2.new(1, 0, 0, 104), 6)
 	help.TextSize = 14
 	help.TextColor3 = COLORS.dim
 	help.TextYAlignment = Enum.TextYAlignment.Top
@@ -277,7 +288,7 @@ function TaggerUI.new(playerGui: Instance): UI
 	local exportFrame = Instance.new("ScrollingFrame")
 	exportFrame.BackgroundColor3 = COLORS.panel
 	exportFrame.BorderSizePixel = 0
-	exportFrame.Size = UDim2.new(1, 0, 1, -476)
+	exportFrame.Size = UDim2.new(1, 0, 1, -490)
 	exportFrame.LayoutOrder = 7
 	exportFrame.CanvasSize = UDim2.new()
 	exportFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -309,11 +320,13 @@ function TaggerUI.new(playerGui: Instance): UI
 		gui = gui,
 		assetBox = assetBox,
 		loadButton = loadButton,
+		autoButton = autoButton,
 		status = status,
 		fields = fields,
 		overview = overview,
 		overviewHint = overviewHint,
 		sectionLayer = sectionLayer,
+		waveformLayer = waveformLayer,
 		tickLayer = tickLayer,
 		markerLayer = markerLayer,
 		playhead = playhead,
@@ -413,6 +426,22 @@ function TaggerUI.drawSections(ui: UI, length: number, sections: { Types.Section
 		label.TextSize = 13
 		label.TextTruncate = Enum.TextTruncate.AtEnd
 		padding(label, 4, 0)
+	end
+end
+
+-- The track's real waveform: one column per point, as tall as the loudest sample there.
+function TaggerUI.drawWaveform(ui: UI, points: { number })
+	clear(ui.waveformLayer)
+	local width = 1 / math.max(1, #points)
+	for i, peak in points do
+		local column = Instance.new("Frame")
+		column.BorderSizePixel = 0
+		column.BackgroundColor3 = COLORS.text
+		column.BackgroundTransparency = 0.55
+		column.AnchorPoint = Vector2.new(0, 0.5)
+		column.Position = UDim2.fromScale((i - 1) * width, 0.5)
+		column.Size = UDim2.fromScale(width, math.clamp(peak, 0.02, 1) * 0.9)
+		column.Parent = ui.waveformLayer
 	end
 end
 

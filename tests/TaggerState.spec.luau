@@ -126,6 +126,29 @@ return {
 		T.equal(TaggerState.jumpTarget(TaggerState.new(), 5, 1, false), nil)
 	end,
 
+	["the analysis fills the grid, sections and cue"] = function()
+		local state = TaggerState.new()
+		TaggerState.applyAnalysis(state, 124, 0.48, { { kind = "intro", startBeat = 0 } }, 0)
+		local track = TaggerState.toTrack(state, META)
+		assert(track, "no track")
+		T.equal(track.bpm, 124)
+		T.near(track.firstBeat, 0.48, 1e-9)
+		T.equal(#track.sections, 1)
+	end,
+
+	["taps override the analysis and clearing them goes back"] = function()
+		local state = TaggerState.new()
+		TaggerState.applyAnalysis(state, 120, FIRST, {}, 0)
+		for i = 0, 15 do
+			TaggerState.addTap(state, FIRST + i * BEAT)
+		end
+		assert(state.fit, "no fit")
+		T.equal(state.fit.bpm, BPM)
+		TaggerState.resetTaps(state)
+		assert(state.fit, "no fit after reset")
+		T.equal(state.fit.bpm, 120)
+	end,
+
 	["toTrack needs a BPM and a downbeat"] = function()
 		T.equal(TaggerState.toTrack(tapped(), META), nil)
 	end,

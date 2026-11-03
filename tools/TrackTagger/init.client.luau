@@ -1,6 +1,8 @@
 --!strict
--- Track Tagger: dev-only tool that measures a track's BPM and first downbeat, marks its sections
--- and cue point, and prints the finished entry for src/shared/Config/Tracks.luau.
+-- Track Tagger: dev-only tool that works out a track's BPM, first downbeat, sections, cue point
+-- and a starting energy rating from its audio, and prints the finished entry for
+-- src/shared/Config/Tracks.luau. "Auto-tag picks" does this for every track in Picks.luau.
+-- The keys are only for fixing a result by ear.
 -- It lives in its own place (tagger.project.json), runs in Play mode and is never shipped.
 
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -14,11 +16,14 @@ if not RunService:IsStudio() then
 	return
 end
 
+local AutoTag = require(script.AutoTag)
 local BeatMath = require(ReplicatedStorage.Shared.Util.BeatMath)
+local Picks = require(script.Picks)
 local TaggerState = require(script.TaggerState)
 local TaggerUI = require(script.TaggerUI)
 local TapTempo = require(script.TapTempo)
 local TempoEstimate = require(script.TempoEstimate)
+local TrackAnalysis = require(script.TrackAnalysis)
 local TrackExport = require(script.TrackExport)
 local TrackPlayer = require(script.TrackPlayer)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -28,11 +33,7 @@ local NUDGE = 0.005 -- seconds the downbeat moves per , or . press
 local NUDGE_FINE = 0.001 -- the same with Shift held
 local SEEK_WITHOUT_GRID = 2 -- seconds per arrow press before there is a beat grid
 local BEST_TAP_COUNT = 32
-local TAPS_BEFORE_CHECK = 8 -- taps needed before the result is compared with the BPM estimate
--- The BPM guess listens to a few seconds at three spots and keeps the most confident result.
-local ESTIMATE_SPOTS = { 0.25, 0.5, 0.75 } -- fractions of the track length
-local ESTIMATE_SECONDS = 12
-local ESTIMATE_SAMPLE_RATE = 8000
+local TAPS_BEFORE_CHECK = 8 -- taps needed before they are compared with the automatic tempo
 
 local SECTION_KEYS: { [Enum.KeyCode]: Types.SectionKind } = {
 	[Enum.KeyCode.One] = "intro",
@@ -51,10 +52,10 @@ local ui = TaggerUI.new(Players.LocalPlayer:WaitForChild("PlayerGui"))
 local track = TrackPlayer.new(workspace)
 local state = TaggerState.new()
 local loadedAssetId: number? = nil
-local loading = false
-local loadCount = 0 -- bumps on every load, so a slow estimate for an older track is dropped
-local estimate: TempoEstimate.Estimate? = nil
-local estimating = false
+local busy = false -- loading or analysing; keys wait until it's done
+local loadCount = 0 -- bumps on every load, so a running analysis of an older track stops
+local analysis: TrackAnalysis.Result? = nil
+local analysisProgress: number? = nil -- 0..1 while the track is being read
 
 local function formatTime(seconds: number): string
 	return string.format("%d:%05.2f", seconds // 60, seconds % 60)
@@ -85,8 +86,17 @@ local function redraw()
 	TaggerUI.drawMarkers(ui, length, state.firstBeat, cueTime())
 end
 
--- Fills the title (and id) from the asset's Creator Store info, when Roblox has it. The uploader is
--- usually a distributor account rather than the artist, so it only goes into the artist hint.
+local function findPick(assetId: number): Picks.Pick?
+	for _, pick in Picks do
+		if pick.assetId == assetId then
+			return pick
+		end
+	end
+	return nil
+end
+
+-- Fills title, id and genre from the asset's Creator Store name. The uploader is usually a
+-- distributor account rather than the artist, so it only goes into the artist hint.
 local function prefillFromAssetInfo(assetId: number)
 	local ok, info = pcall(function()
 		return MarketplaceService:GetProductInfoAsync(assetId, Enum.InfoType.Asset)
@@ -97,6 +107,8 @@ local function prefillFromAssetInfo(assetId: number)
 	if type(info.Name) == "string" and TaggerUI.getField(ui, "title") == "" then
 		TaggerUI.setField(ui, "title", info.Name)
 		TaggerUI.setField(ui, "id", TrackExport.makeId(info.Name))
+		local isTechHouse = string.find(string.lower(info.Name), "tech house", 1, true) ~= nil
+		TaggerUI.setField(ui, "genre", if isTechHouse then "tech house" else "house")
 	end
 	local creator = info.Creator
 	if type(creator) == "table" and type(creator.Name) == "string" then
@@ -104,39 +116,85 @@ local function prefillFromAssetInfo(assetId: number)
 	end
 end
 
--- Guesses the BPM in the background after a load. Taps still set the real grid.
-local function estimateTempo(forLoad: number)
-	estimating = true
-	local length = track:getLength()
-	local estimates = {}
-	for _, spot in ESTIMATE_SPOTS do
-		local samples = track:getWaveform(length * spot, ESTIMATE_SECONDS, ESTIMATE_SAMPLE_RATE)
-		if loadCount ~= forLoad then
-			return -- another track was loaded meanwhile; that load runs its own estimate
-		end
-		local guess = if samples then TempoEstimate.fromSamples(samples, ESTIMATE_SAMPLE_RATE) else nil
-		if guess then
-			table.insert(estimates, guess)
-		end
-		task.wait()
+local function fillFields(assetId: number)
+	for _, name in { "id", "title", "artist" } do
+		TaggerUI.setField(ui, name, "")
 	end
-	local best = TempoEstimate.best(estimates)
-	estimate = if best and best.confidence >= TempoEstimate.MIN_CONFIDENCE then best else nil
-	estimating = false
-	if #state.taps == 0 then
-		status(
-			if estimate
-				then string.format(
-					"BPM estimate ~%d. Press Space to play, then tap T on every beat to measure it exactly.",
-					math.round(estimate.bpm)
-				)
-				else "No clear BPM estimate for this track. Press Space to play, then tap T on every beat."
-		)
+	TaggerUI.setFieldHint(ui, "artist", "artist")
+	local pick = findPick(assetId)
+	if pick then
+		TaggerUI.setField(ui, "id", pick.id)
+		TaggerUI.setField(ui, "title", pick.title)
+		TaggerUI.setField(ui, "artist", pick.artist)
+		TaggerUI.setField(ui, "genre", pick.genre)
+	else
+		task.spawn(prefillFromAssetInfo, assetId)
 	end
 end
 
-local function loadTrack()
-	if loading then
+local function sectionList(sections: { Types.Section }): string
+	local parts = {}
+	for _, section in sections do
+		table.insert(parts, string.format("%s %d", section.kind, section.startBeat))
+	end
+	return table.concat(parts, " · ")
+end
+
+-- Loads a track and works everything out from its audio. Returns true when the analysis worked.
+local function loadAndAnalyse(assetId: number): boolean
+	busy = true
+	loadCount += 1
+	local thisLoad = loadCount
+	analysis, analysisProgress = nil, nil
+	status(string.format("Loading %d...", assetId))
+	local loaded, reason = track:load(assetId, LOAD_TIMEOUT)
+	if not loaded then
+		busy, loadedAssetId = false, nil
+		problem(string.format("Couldn't load %d: %s", assetId, reason or "unknown error"))
+		return false
+	end
+
+	loadedAssetId = assetId
+	state = TaggerState.new()
+	fillFields(assetId)
+	TaggerUI.setExport(ui, "")
+	TaggerUI.drawWaveform(ui, {})
+	redraw()
+
+	analysisProgress = 0
+	local result, failure = AutoTag.run(track, function(progress)
+		analysisProgress = progress
+		status(string.format("Reading the track to find its beat and sections... %d%%", math.round(progress * 100)))
+	end, function()
+		return loadCount ~= thisLoad
+	end)
+	if loadCount ~= thisLoad then
+		return false -- a newer load took over
+	end
+	analysisProgress = nil
+	busy = false
+
+	if not result then
+		problem(string.format("Couldn't work this track out (%s). Tap T on every beat and press D on a 1.", failure))
+		return false
+	end
+	analysis = result
+	TaggerState.applyAnalysis(state, result.grid.bpm, result.grid.firstBeat, result.sections, result.cuePoint)
+	TaggerUI.setField(ui, "energy", tostring(result.energy))
+	TaggerUI.drawWaveform(ui, result.waveform)
+	redraw()
+	status(
+		string.format(
+			"Done: %s BPM, %d sections. Press Space to listen (the light flashes white on every 1), then E to export.",
+			result.grid.bpm,
+			#result.sections
+		)
+	)
+	return true
+end
+
+local function loadFromBox()
+	if busy then
 		return
 	end
 	local digits = string.match(ui.assetBox.Text, "%d+")
@@ -145,30 +203,7 @@ local function loadTrack()
 		problem("Paste a track's asset ID (the number from its Creator Store page).")
 		return
 	end
-
-	loading = true
-	status(string.format("Loading %d...", assetId))
-	local ok, reason = track:load(assetId, LOAD_TIMEOUT)
-	loading = false
-	if not ok then
-		loadedAssetId = nil
-		problem(string.format("Couldn't load %d: %s", assetId, reason or "unknown error"))
-		return
-	end
-
-	loadedAssetId = assetId
-	state = TaggerState.new()
-	for _, name in { "id", "title", "artist" } do
-		TaggerUI.setField(ui, name, "")
-	end
-	TaggerUI.setFieldHint(ui, "artist", "artist")
-	TaggerUI.setExport(ui, "")
-	loadCount += 1
-	estimate = nil
-	task.spawn(prefillFromAssetInfo, assetId)
-	task.spawn(estimateTempo, loadCount)
-	redraw()
-	status(string.format("Loaded (%s long). Estimating the BPM...", formatTime(track:getLength())))
+	loadAndAnalyse(assetId)
 end
 
 local function seekTo(time: number)
@@ -205,17 +240,36 @@ local function readMeta(): TaggerState.Meta
 	}
 end
 
-local function export()
+-- The entry for the loaded track, its warnings, and a one-line summary of how sure the analysis is.
+local function buildEntry(): (Types.Track?, { string }, string)
 	local entry = TaggerState.toTrack(state, readMeta())
 	if not entry then
-		problem("Tap the BPM (T) and mark the first downbeat (D) before exporting.")
+		return nil, {}, ""
+	end
+	local summary = string.format("%s: %s BPM, first beat %.3f s", entry.id, entry.bpm, entry.firstBeat)
+	if analysis and state.fit and state.fit.tapCount == 0 then
+		summary ..= string.format(
+			", grid drift %d ms, beat fit %.2f, downbeat clarity %.2f, downbeat from %s",
+			math.round(analysis.grid.driftMs),
+			analysis.grid.beatConfidence,
+			analysis.grid.downbeatConfidence,
+			analysis.grid.downbeatMethod
+		)
+	end
+	summary ..= ", sections " .. sectionList(entry.sections)
+	return entry, TrackExport.validate(entry), summary
+end
+
+local function export()
+	local entry, warnings, summary = buildEntry()
+	if not entry then
+		problem("No beat grid yet. Load a track, or tap T on every beat and press D on a 1.")
 		return
 	end
 	local text = TrackExport.toLua(entry)
 	TaggerUI.setExport(ui, text)
+	print("[TrackTagger] " .. summary)
 	print("[TrackTagger] Paste this into src/shared/Config/Tracks.luau:\n" .. text)
-
-	local warnings = TrackExport.validate(entry)
 	for _, message in warnings do
 		warn("[TrackTagger] " .. message)
 	end
@@ -223,6 +277,39 @@ local function export()
 		status("Exported. Copy it from the box below or the Output window.")
 	else
 		problem(string.format("Exported with %d warning(s): %s", #warnings, table.concat(warnings, "; ")))
+	end
+end
+
+-- Analyses every track in Picks.luau and prints all their entries at the end, ready to paste.
+local function autoTagPicks()
+	if busy then
+		return
+	end
+	local entries, failed = {}, {}
+	for i, pick in Picks do
+		ui.assetBox.Text = tostring(pick.assetId)
+		local ok = loadAndAnalyse(pick.assetId)
+		local entry, warnings, summary = buildEntry()
+		if ok and entry then
+			print(string.format("[TrackTagger] %d/%d %s", i, #Picks, summary))
+			for _, message in warnings do
+				warn(string.format("[TrackTagger] %s: %s", pick.id, message))
+			end
+			table.insert(entries, TrackExport.toLua(entry))
+		else
+			table.insert(failed, pick.id)
+			warn(string.format("[TrackTagger] %d/%d %s: analysis failed", i, #Picks, pick.id))
+		end
+	end
+	local all = table.concat(entries, "\n")
+	TaggerUI.setExport(ui, all)
+	print(string.format("[TrackTagger] All picks (%d of %d), paste into Tracks.luau:\n%s", #entries, #Picks, all))
+	if #failed == 0 then
+		status(
+			string.format("Auto-tagged all %d picks. The entries are in the box below and the Output window.", #entries)
+		)
+	else
+		problem(string.format("Auto-tagged %d of %d picks; failed: %s", #entries, #Picks, table.concat(failed, ", ")))
 	end
 end
 
@@ -234,13 +321,13 @@ local function tap()
 	TaggerState.addTap(state, track:getPosition())
 	redraw()
 	local fit = state.fit
-	-- After a few taps, compare against the BPM estimate to catch half- or double-time tapping.
+	-- After a few taps, compare with the automatic tempo to catch half- or double-time tapping.
 	local hint = if fit
-			and estimate
+			and analysis
 			and fit.tapCount >= TAPS_BEFORE_CHECK
-		then TempoEstimate.checkTaps(fit.bpm, estimate)
+		then TempoEstimate.checkTaps(fit.bpm, { bpm = analysis.grid.bpm, confidence = analysis.grid.beatConfidence })
 		else nil
-	if not fit then
+	if not fit or fit.tapCount == 0 then
 		status(string.format("Keep tapping... (%d of at least %d)", #state.taps, TapTempo.MIN_TAPS))
 	elseif hint then
 		problem(hint)
@@ -277,7 +364,7 @@ local function markSection(kind: Types.SectionKind)
 end
 
 local function onKey(key: Enum.KeyCode)
-	if loading then
+	if busy then
 		return
 	end
 	if not loadedAssetId then
@@ -304,7 +391,7 @@ local function onKey(key: Enum.KeyCode)
 	elseif key == Enum.KeyCode.R then
 		TaggerState.resetTaps(state)
 		redraw()
-		status("Taps cleared. Tap T on every beat.")
+		status(if state.fit then "Taps cleared; back to the automatic tempo." else "Taps cleared. Tap T on every beat.")
 	elseif key == Enum.KeyCode.B then
 		TaggerState.toggleRounding(state)
 		redraw()
@@ -338,7 +425,9 @@ local function readoutText(position: number, length: number, beat: number?): str
 	local fit = state.fit
 	local lines = { string.format("time      %s / %s", formatTime(position), formatTime(length)) }
 
-	if fit then
+	if fit and fit.tapCount == 0 then
+		table.insert(lines, string.format("bpm       %s   found automatically (tap T to override)", fit.bpm))
+	elseif fit then
 		table.insert(
 			lines,
 			string.format(
@@ -354,12 +443,20 @@ local function readoutText(position: number, length: number, beat: number?): str
 		table.insert(lines, string.format("bpm       -   tap T on every beat while it plays (%d taps)", #state.taps))
 	end
 
-	if estimating then
-		table.insert(lines, "estimate  listening to the track...")
-	elseif estimate then
-		table.insert(lines, string.format("estimate  ~%d (rough guess from the audio)", math.round(estimate.bpm)))
+	if analysisProgress then
+		table.insert(lines, string.format("auto      reading the track... %d%%", math.round(analysisProgress * 100)))
+	elseif analysis then
+		table.insert(
+			lines,
+			string.format(
+				"auto      grid drift %d ms, beat fit %.2f, downbeat clarity %.2f",
+				math.round(analysis.grid.driftMs),
+				analysis.grid.beatConfidence,
+				analysis.grid.downbeatConfidence
+			)
+		)
 	else
-		table.insert(lines, "estimate  -   no clear beat found")
+		table.insert(lines, "auto      -")
 	end
 
 	if state.firstBeat and beat then
@@ -367,14 +464,11 @@ local function readoutText(position: number, length: number, beat: number?): str
 		table.insert(lines, string.format("downbeat  %.3f s   now at bar %d, beat %d", state.firstBeat, bar, beatInBar))
 		table.insert(lines, string.format("cue       beat %d (bar %d)", state.cuePoint, state.cuePoint // 4 + 1))
 	else
-		table.insert(lines, "downbeat  -   press D on a 1 after tapping")
+		table.insert(lines, "downbeat  -")
 	end
 
-	local parts = {}
-	for _, section in state.sections do
-		table.insert(parts, string.format("%s %d", section.kind, section.startBeat))
-	end
-	table.insert(lines, "sections  " .. (if #parts > 0 then table.concat(parts, " · ") else "-   keys 1-5"))
+	local sections = sectionList(state.sections)
+	table.insert(lines, "sections  " .. (if sections ~= "" then sections else "-"))
 	return table.concat(lines, "\n")
 end
 
@@ -403,15 +497,16 @@ local function update()
 	TaggerUI.setReadout(ui, readoutText(position, length, beat))
 end
 
-ui.loadButton.Activated:Connect(loadTrack)
+ui.loadButton.Activated:Connect(loadFromBox)
+ui.autoButton.Activated:Connect(autoTagPicks)
 ui.assetBox.FocusLost:Connect(function(enterPressed: boolean)
 	if enterPressed then
-		loadTrack()
+		loadFromBox()
 	end
 end)
 
 ui.overview.MouseButton1Down:Connect(function(x: number)
-	if not loadedAssetId then
+	if not loadedAssetId or busy then
 		return
 	end
 	local fraction = (x - ui.overview.AbsolutePosition.X) / ui.overview.AbsoluteSize.X
@@ -429,4 +524,4 @@ end)
 
 RunService.RenderStepped:Connect(update)
 
-print("[TrackTagger] Ready. Paste a track's asset ID and press Load.")
+print("[TrackTagger] Ready. Paste a track's asset ID and press Load, or press Auto-tag picks.")

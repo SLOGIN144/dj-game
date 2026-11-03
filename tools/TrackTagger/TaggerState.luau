@@ -14,7 +14,8 @@ export type State = {
 	taps: { number },
 	tapping: boolean, -- false after a seek: the next tap starts a fresh tap session
 	roundBpm: boolean,
-	fit: TapTempo.Fit?,
+	fit: TapTempo.Fit?, -- the grid's tempo: from taps if there are enough, else from the analysis
+	autoFit: TapTempo.Fit?, -- the tempo the automatic analysis found
 	firstBeat: number?, -- seconds to the first downbeat
 	sections: { Types.Section },
 	cuePoint: number, -- beats
@@ -38,6 +39,7 @@ function TaggerState.new(): State
 		tapping = false,
 		roundBpm = true,
 		fit = nil,
+		autoFit = nil,
 		firstBeat = nil,
 		sections = {},
 		cuePoint = 0,
@@ -45,7 +47,25 @@ function TaggerState.new(): State
 end
 
 local function refit(state: State)
-	state.fit = TapTempo.fit(state.taps, state.roundBpm)
+	state.fit = TapTempo.fit(state.taps, state.roundBpm) or state.autoFit
+end
+
+-- Fills the grid, sections and cue from the automatic analysis. Tapping (T) can still override
+-- the tempo, and clearing the taps (R) goes back to this.
+function TaggerState.applyAnalysis(
+	state: State,
+	bpm: number,
+	firstBeat: number,
+	sections: { Types.Section },
+	cuePoint: number
+)
+	state.taps = {}
+	state.tapping = false
+	state.autoFit = { bpm = bpm, measuredBpm = bpm, anchor = firstBeat, tapCount = 0, maxErrorMs = 0 }
+	state.fit = state.autoFit
+	state.firstBeat = firstBeat
+	state.sections = table.clone(sections)
+	state.cuePoint = cuePoint
 end
 
 function TaggerState.addTap(state: State, time: number)
@@ -65,7 +85,7 @@ end
 function TaggerState.resetTaps(state: State)
 	state.taps = {}
 	state.tapping = false
-	state.fit = nil
+	state.fit = state.autoFit
 end
 
 function TaggerState.toggleRounding(state: State)

@@ -38,6 +38,27 @@ export type Location = {
 	guests: { min: number, max: number }, -- guests shown, from no income to a finished location
 }
 
+-- One blockout part, placed relative to a plot's origin (centre of the plot base's top face,
+-- local -Z towards the street).
+export type PartSpec = {
+	size: Vector3,
+	offset: Vector3, -- centre of the part
+	colour: Color3,
+	material: Enum.Material?, -- SmoothPlastic when nil
+	shape: Enum.PartType?, -- Block when nil
+	rotation: Vector3?, -- degrees around X, Y, Z
+	transparency: number?,
+	collide: boolean?, -- true when nil
+	light: { colour: Color3?, brightness: number, range: number }?, -- a PointLight in the part
+	text: { text: string, colour: Color3 }?, -- glowing text on the part's front (-Z) face
+}
+
+-- A location's look: the room that's always there, and what each bought item adds.
+export type Blockout = {
+	shell: { PartSpec },
+	items: { [string]: { PartSpec } },
+}
+
 -- What one item costs and does to its plot's income.
 export type ItemEffect = {
 	cost: number,

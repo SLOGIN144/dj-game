@@ -2,6 +2,7 @@
 -- Server entry point: builds the street, then starts the services and hands out plots.
 
 local Decks = require(script.Parent.Services.Decks)
+local DevTools = require(script.Parent.Services.DevTools)
 local Economy = require(script.Parent.Services.Economy)
 local Events = require(script.Parent.Services.Events)
 local Goals = require(script.Parent.Services.Goals)
@@ -28,6 +29,7 @@ Travel.start()
 Progression.start()
 StarDjs.start()
 Settings.start()
+DevTools.start()
 Leaderboard.start(StreetProps.screen(workspace:WaitForChild("Street")))
 Plots.start(function(state)
 	Shop.refresh(state)

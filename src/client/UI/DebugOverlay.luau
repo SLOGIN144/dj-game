@@ -1,7 +1,8 @@
 --!strict
 -- Dev-only overlay, toggled with F2 in Studio: the mix plan of the plot you hear, each deck's
 -- drift from the plan, the phase error between the decks during a blend (the GDD wants under 1/16
--- beat), the next drop, income and FPS.
+-- beat), the next drop, income and FPS. While it's open, F3 gives cash, F4 finishes the location,
+-- F6 starts an event and F7 rests every star DJ (the server only allows these in Studio).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,12 +12,19 @@ local UserInputService = game:GetService("UserInputService")
 local MixTimeline = require(ReplicatedStorage.Shared.Music.MixTimeline)
 local PlotMixes = require(script.Parent.Parent.Controllers.PlotMixes)
 local PlotMusic = require(script.Parent.Parent.Controllers.PlotMusic)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local TrackInfo = require(ReplicatedStorage.Shared.Music.TrackInfo)
 
 local DebugOverlay = {}
 
 local TOGGLE_KEY = Enum.KeyCode.F2
 local REFRESH = 0.2
+local CHEATS: { [Enum.KeyCode]: string } = {
+	[Enum.KeyCode.F3] = "cash",
+	[Enum.KeyCode.F4] = "finish",
+	[Enum.KeyCode.F6] = "event",
+	[Enum.KeyCode.F7] = "rest",
+}
 
 local function phaseError(a: number, b: number): number
 	local diff = (a - b) % 1
@@ -114,8 +122,13 @@ function DebugOverlay.start()
 	gui.Parent = player:WaitForChild("PlayerGui")
 
 	UserInputService.InputBegan:Connect(function(input, processed)
-		if not processed and input.KeyCode == TOGGLE_KEY then
+		if processed then
+			return
+		end
+		if input.KeyCode == TOGGLE_KEY then
 			gui.Enabled = not gui.Enabled
+		elseif gui.Enabled and CHEATS[input.KeyCode] then
+			Remotes.event("DevCheat"):FireServer(CHEATS[input.KeyCode])
 		end
 	end)
 
@@ -133,7 +146,7 @@ function DebugOverlay.start()
 		sinceRefresh = 0
 		local income = player:GetAttribute("Income")
 		text.Text = string.format(
-			"%s\nIncome %s/s   FPS %.0f",
+			"%s\nIncome %s/s   FPS %.0f   [F3 cash  F4 finish  F6 event  F7 rest DJs]",
 			describe(),
 			tostring(if typeof(income) == "number" then math.floor(income * 100) / 100 else 0),
 			fps

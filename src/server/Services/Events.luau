@@ -308,6 +308,14 @@ function Events.begin(state: PlayerState.State)
 	entries[state.player] = { onPlot = 0, nextAt = nextDelay() }
 end
 
+-- Makes the owner's next event happen at the next check (Studio testing, Services/DevTools).
+function Events.soon(state: PlayerState.State)
+	local entry = entries[state.player]
+	if entry and not entry.active then
+		entry.onPlot = entry.nextAt
+	end
+end
+
 -- Forgets a leaving owner's event (their plot is cleared with everything on it).
 function Events.stop(state: PlayerState.State)
 	local entry = entries[state.player]

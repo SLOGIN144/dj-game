@@ -385,15 +385,19 @@ dj-game/
   rokit.toml  selene.toml  stylua.toml
   src/
     shared/   -> ReplicatedStorage.Shared
-      Config/   Tracks, Locations, Items, StarDjs, Goals, Events, Balance
-      Economy/  Pricing, Income (pure, tested)
-      Music/    MixPlanner, TrackInfo, TimingJudge (pure, tested)
-      Types.luau  Remotes.luau  Util/ (BeatMath, Signal)
+      Config/   Tracks, Locations, Items, StarDjs, Goals, Balance, Blockouts/, Buildings, PlotLayout, Skies, Sounds
+      Economy/  Pricing, Income, Crowd, Register, Unlocks, Boost, GoalCheck, Booking (pure, tested)
+      Music/    MixPlanner, MixTimeline, TrackInfo, TimingJudge (pure, tested)
+      Data/     SaveSchema, SessionLock (pure, tested)
+      Types.luau  Remotes.luau  Util/ (PlotSpace, PlotArea, BeatMath, Signal, Rng, Bounds, Format)
     server/   -> ServerScriptService.Server
-      Services/ Plots, PlayerData, Economy, Shop, Music, Decks, Events, StarDjs, Goals, Leaderboard
+      Services/ Plots, PlayerData, PlayerState, Economy, Shop, Progression, Travel, Music, Decks,
+                Events, StarDjs, Goals, TrackShop, Leaderboard, Settings, DevTools (Studio only)
+      World/    Street, StreetProps, Skyline, NightLook, Building, PlotView, PartFactory, Builder, Figures, Art
     client/   -> StarterPlayer.StarterPlayerScripts.Client
-      Controllers/ AudioEngine, BeatClock, PlotMusic, Decks, Guests, LightShow, Camera
-      UI/ Hud, DecksUI, Shops, Dialogue
+      Controllers/ AudioEngine, BeatClock, PlotMixes, PlotMusic, Decks, Guests, LightShow, Effects,
+                   StarDjView, Ambience, JetGate, Camera, OwnPlot, Sfx, Volume, PromptFilter
+      UI/ Hud, DecksUI, TrackShop, DjBoard, Dialogue, GoalTracker, PadLabels, SettingsPanel, Fade, Style, DebugOverlay
   tools/
     TrackTagger/           -- dev-only, never shipped
   tests/                   -- *.spec.luau, run on Play in the tagger place
@@ -411,7 +415,8 @@ From the set prototype, `AudioEngine`, `BeatClock`, `TimingJudge`, `TrackInfo`, 
 ### Data
 
 - Saving uses a small session-locking layer on DataStoreService instead of a package (Filip, 2026-11-04: no packages): `Data/SessionLock` claims a player's record with `UpdateAsync` when they join, and only the claiming server may write it. It's the same pattern ProfileStore uses.
-- **Schema v1 (approved 2026-11-04, in `Data/SaveSchema`):** version, cash, totalEarned, location, boughtItems (ids at the current location), ownedTracks, goalsDone, register, stats (Perfect and Good drops, events done, play time). unlockedDjs, djRestUntil, settings and purchases come with a later version and its migration step.
+- **Schema v1 (approved 2026-11-04, in `Data/SaveSchema`):** version, cash, totalEarned, location, boughtItems (ids at the current location), ownedTracks, goalsDone, register, stats (Perfect and Good drops, events done, play time).
+- **Schema v2 (written in the autonomous run of 2026-11-04, waiting for Filip's OK, see `docs/decisions.md`):** adds goalProgress (counted goals), djRestUntil (star DJ rests, Unix time) and settings (master, music and SFX volume). Version 1 saves migrate with all three empty. Unlocked DJs follow from the location, so they aren't saved; purchases come with monetization.
 - A version field and a migration function from day one.
 - DataStores only work in a place published to Roblox with "Enable Studio Access to API Services" turned on (Game Settings → Security). Filip does this once, when saving is built.
 
@@ -470,11 +475,13 @@ Goal: prove the tycoon loop is fun in one room. It's done when a new player buil
 
 Steps 2–6 are written: step 2 earlier, and steps 3–6 on 2026-11-04 in a cloud session without Studio. Each passes the format, lint and type checks and the pure specs, but steps 3–6 haven't run in Roblox yet. Next is a Studio pass with `docs/studio-checklist.md`; tick the boxes above only after it.
 
+**The autonomous run (2026-11-04).** Filip asked for the whole game to be finished while he slept, without questions. The dorm-only Milestone 1 version is kept on the branch `prototype`. The working branch goes on to Milestone 2's content, as a prototype that still needs Filip's review: Move on, the house party, the club, Ibiza with the jet, star DJs, the VIP and photographer events, the leaderboard and settings. Every decision that would normally wait for Filip is in `docs/decisions.md`. Model sheets for the art are on the Claude Design canvas (`docs/art-pipeline.md`).
+
 ## Roadmap after the prototype
 
 Launch happens only when the core loop is polished and has no known bugs; big content comes after as updates.
 
-1. **Milestone 2 — Full launch content:** the new street (growing buildings, interiors, the jet), Move on, the house party, club and Ibiza locations, all three events, all characters and goals, star DJs, more tracks.
+1. **Milestone 2 — Full launch content:** the new street (growing buildings, interiors, the jet), Move on, the house party, club and Ibiza locations, all three events, all characters and goals, star DJs, more tracks. (A first version was written ahead in the autonomous run; it needs Filip's review and a Studio pass.)
 2. **Milestone 3 — Launch prep:** monetization (decided with Filip), settings, mobile performance pass, leaderboards, analytics events, maturity questionnaire, icon and thumbnails, trailer clips for TikTok. Then launch v1.0.
 3. **Updates:** rebirth and the world tour, offline earnings, B2B at one plot, club likes, themed nights, new genres.
 
@@ -500,14 +507,14 @@ Launch happens only when the core loop is polished and has no known bugs; big co
 - [ ] Monetization for the tycoon: which passes and products, and prices.
 - [ ] Offline earnings: yes or no, and how much.
 - [ ] Rebirth: what it resets, what it keeps, and the world tour.
-- [ ] Star DJ names and looks; check none matches a real artist.
-- [ ] Ibiza goals and the ending.
+- [ ] Star DJ names and looks; check none matches a real artist. (Proposed in `Config/StarDjs.luau`: Kiko Wavelength, Tamsin Flux, Ondra Voltz, Mira Sundial.)
+- [ ] Ibiza goals and the ending. (Proposed in `Config/Goals.luau`: 5 Perfect drops at sunset, the fireworks, booking Mira Sundial, owning every track.)
 - [ ] Genre list beyond house and tech house, after checking the Creator Store.
 - [ ] What Roblox allows for sponsor banners.
 - [ ] More art references: a colour palette per location.
-- [ ] How doors work. Proposed default: an interior is a separate space away from the street, reached with a short fade, so it can be any size.
+- [ ] How doors work. Proposed default: an interior is a separate space away from the street, reached with a short fade, so it can be any size. (The autonomous run keeps the house party and the club as open-front rooms on the plot, like the dorm, and builds only Ibiza as a separate space: see `docs/decisions.md`. `Locations.space` switches a location between the two.)
 - [ ] What the street sounds like. Proposed default: a quiet, muffled mix from the nearest building, with the full mix only inside. (The prototype does this: `Balance.Music`.)
-- [ ] Visiting a friend's Ibiza before unlocking your own. Proposed default: the jet stays locked until you unlock Ibiza yourself.
+- [ ] Visiting a friend's Ibiza before unlocking your own. Proposed default: the jet stays locked until you unlock Ibiza yourself. (Built that way.)
 - [ ] Building stages for locations beyond the first four.
 
 ## Glossary

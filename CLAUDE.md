@@ -5,9 +5,10 @@ Roblox DJ club tycoon: build your club button by button, from a dorm room to an 
 
 ## Current focus
 
-Milestone 1 (tycoon prototype): only the first room, the dorm. Step 1 (tooling, track data, Track Tagger) is done and the 7 tracks are tagged. The code for steps 2–6 is committed: steps 3–6 (self-mixing music, lights and guests, the decks, track shop, blown speaker, Max's goals, saving) were written on 2026-11-04 in a cloud session without Studio and haven't run in Roblox yet.
-On 2026-11-03 the game became a club tycoon; the old timing-set prototype is kept under the git tag `set-prototype`. Next: run `docs/studio-checklist.md` in Studio and fix what breaks, then Filip's playtest. Build only the current milestone.
-Art references live in `docs/concept/` (street, dorm, house party, club, Ibiza).
+Milestone 1 (tycoon prototype): the dorm. Step 1 (tooling, track data, Track Tagger) is done and the 7 tracks are tagged. Steps 2–6 are written, but steps 3–6 haven't run in Roblox yet.
+On 2026-11-04 Filip asked for the whole game to be finished while he slept. That autonomous run went on to Milestone 2's content as a prototype: Move on, the house party, the club, Ibiza and the jet, star DJs, the VIP and photographer events, the leaderboard and settings. The dorm-only version is on the branch `prototype`. Every decision Filip still has to OK, including save schema v2, is in `docs/decisions.md`.
+Next: run `docs/studio-checklist.md` in Studio and fix what breaks, then Filip reviews `docs/decisions.md` and playtests. The old timing-set prototype is under the git tag `set-prototype`.
+Art references live in `docs/concept/`. The model sheets for every model are on the Claude Design canvas, and `docs/art-pipeline.md` explains how imported models replace the blockouts.
 
 ## Stack
 

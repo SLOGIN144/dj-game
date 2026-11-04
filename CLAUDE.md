@@ -27,6 +27,7 @@ Art references live in `docs/concept/`. The model sheets for every model are on 
 | Client | `src/client` -> StarterPlayerScripts.Client |
 | Track Tagger (dev only) | `tools/TrackTagger`, in its own place via `tagger.project.json`. Analyses audio by itself (beat grid, sections, cue, energy); keys only fix results. New tracks go in `Picks.luau`, then "Auto-tag picks". |
 | Tests | `tests/*.spec.luau`, run on Play in the tagger place |
+| Checks without Studio | `tools/cloud/`: `setup.sh` fetches the tools, `check.sh` runs format, lint, types, specs, the world build and a server-and-client simulation in Lune (see its README) |
 
 - Game: `rojo serve` (port 34872), connect from the Rojo plugin in the game place.
 - Tagger: `rojo build tagger.project.json -o TrackTagger.rbxl` once, open it, then `rojo serve tagger.project.json` (port 34873).

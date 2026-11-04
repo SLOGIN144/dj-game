@@ -218,6 +218,7 @@ Each location is a hand-tuned space defined in `Config/Locations.luau`: id, name
 - The number of guests follows the plot's income, within the location's range. Guests walk in through the location's entrance and dance on the floor.
 - Guests are client-side visuals built from replicated plot state, so every player sees them in every club.
 - **Rendering:** front rows are full R15 rigs with varied dance animations, random start offsets and ±10% speed; further back, simpler figures moved by one shared bob script. Budget about 40 full rigs on PC and 15 on mobile across all plots in view, scaled by graphics quality.
+- **Prototype:** the dorm's 0–5 friends are figures built from parts and moved on the beat by code (`Controllers/Guests`), since dance animations need animation IDs. R15 rigs replace them once Filip provides the IDs.
 - **Reactions:** dancing on the beat, hands up on drops, a cheer burst on a Perfect drop, bigger moves during a boost or a star DJ set.
 
 ## Visual style and lighting
@@ -409,8 +410,8 @@ From the set prototype, `AudioEngine`, `BeatClock`, `TimingJudge`, `TrackInfo`, 
 
 ### Data
 
-- Use ProfileStore (a session-locked DataStore wrapper) or an equivalent session-locking pattern. Ask Filip before adding the package.
-- **Schema v1 (proposal, needs Filip's OK):** version, cash, totalEarned, location, boughtItems (ids at the current location), ownedTracks, unlockedDjs, djRestUntil, goalsDone, stats (Perfect drops, events done, play time), settings, purchases.
+- Saving uses a small session-locking layer on DataStoreService instead of a package (Filip, 2026-11-04: no packages): `Data/SessionLock` claims a player's record with `UpdateAsync` when they join, and only the claiming server may write it. It's the same pattern ProfileStore uses.
+- **Schema v1 (approved 2026-11-04, in `Data/SaveSchema`):** version, cash, totalEarned, location, boughtItems (ids at the current location), ownedTracks, goalsDone, register, stats (Perfect and Good drops, events done, play time). unlockedDjs, djRestUntil, settings and purchases come with a later version and its migration step.
 - A version field and a migration function from day one.
 - DataStores only work in a place published to Roblox with "Enable Studio Access to API Services" turned on (Game Settings → Security). Filip does this once, when saving is built.
 
@@ -467,6 +468,8 @@ Goal: prove the tycoon loop is fun in one room. It's done when a new player buil
 5. Track shop, blown speaker event, Max's goals, dialogue.
 6. Saving, then a polish pass and a two-player test.
 
+Steps 2–6 are written: step 2 earlier, and steps 3–6 on 2026-11-04 in a cloud session without Studio. Each passes the format, lint and type checks and the pure specs, but steps 3–6 haven't run in Roblox yet. Next is a Studio pass with `docs/studio-checklist.md`; tick the boxes above only after it.
+
 ## Roadmap after the prototype
 
 Launch happens only when the core loop is polished and has no known bugs; big content comes after as updates.
@@ -503,7 +506,7 @@ Launch happens only when the core loop is polished and has no known bugs; big co
 - [ ] What Roblox allows for sponsor banners.
 - [ ] More art references: a colour palette per location.
 - [ ] How doors work. Proposed default: an interior is a separate space away from the street, reached with a short fade, so it can be any size.
-- [ ] What the street sounds like. Proposed default: a quiet, muffled mix from the nearest building, with the full mix only inside.
+- [ ] What the street sounds like. Proposed default: a quiet, muffled mix from the nearest building, with the full mix only inside. (The prototype does this: `Balance.Music`.)
 - [ ] Visiting a friend's Ibiza before unlocking your own. Proposed default: the jet stays locked until you unlock Ibiza yourself.
 - [ ] Building stages for locations beyond the first four.
 

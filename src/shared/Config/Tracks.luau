@@ -3,7 +3,8 @@
 -- (tools/TrackTagger): never type BPM or offsets by hand, and never invent asset IDs.
 -- Section positions are in beats from the first downbeat.
 -- The 7 prototype tracks below were auto-tagged from their audio on 2026-11-03 (see docs/track-picks.md).
--- Energy is a first guess from tempo; tier and price are placeholders until the shop (Milestone 2).
+-- Energy is a first guess from tempo. Tier and price are placeholders: the track shop sells each
+-- track for its price, and a new player owns Balance.Start.tracks.
 
 local Types = require(script.Parent.Parent.Types)
 

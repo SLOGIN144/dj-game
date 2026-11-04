@@ -56,7 +56,27 @@ function Sfx.play(name: string, volume: number?)
 	end)
 end
 
--- The SFX volume, 0..1 (for a settings slider later).
+-- A looping sound on the SFX bus, stopped until played (nil while its ID isn't chosen yet).
+function Sfx.loop(name: string): AudioPlayer?
+	local id = Sounds[name]
+	if not id or id == 0 then
+		return nil
+	end
+	local parent, fader = setup()
+	local player = Instance.new("AudioPlayer")
+	player.Name = name
+	player.Asset = string.format("rbxassetid://%d", id)
+	player.Looping = true
+	player.Volume = 0
+	player.Parent = parent
+	local link = Instance.new("Wire")
+	link.SourceInstance = player
+	link.TargetInstance = fader
+	link.Parent = player
+	return player
+end
+
+-- The SFX volume, 0..1 (master × SFX from the settings).
 function Sfx.setVolume(volume: number)
 	local _, fader = setup()
 	fader.Volume = math.clamp(volume, 0, 1)

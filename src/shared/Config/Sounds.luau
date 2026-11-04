@@ -20,6 +20,7 @@ local Sounds: { [string]: number } = {
 	co2 = 0, -- a CO2 jet's hiss on a drop
 	firework = 0, -- a firework bursting
 	click = 0, -- UI buttons
+	crowd = 0, -- a looping crowd bed (chatter, whoops); its volume follows the guest count
 }
 
 return Sounds

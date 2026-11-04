@@ -2,6 +2,7 @@
 -- Client entry point. Starts the HUD and the other client controllers.
 
 local Ambience = require(script.Parent.Controllers.Ambience)
+local CrowdAmbience = require(script.Parent.Controllers.CrowdAmbience)
 local DebugOverlay = require(script.Parent.UI.DebugOverlay)
 local DjBoard = require(script.Parent.UI.DjBoard)
 local Decks = require(script.Parent.Controllers.Decks)
@@ -47,6 +48,7 @@ LightShow.start()
 Guests.start()
 Effects.start()
 Ambience.start()
+CrowdAmbience.start()
 JetGate.start()
 Fade.start()
 TrackShop.start()

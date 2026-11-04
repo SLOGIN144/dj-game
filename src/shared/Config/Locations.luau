@@ -48,6 +48,7 @@ local Locations: { Types.Location } = {
 		space = "venue",
 		spaceSize = Vector3.new(140, 60, 140),
 		events = { "speaker", "vip", "photographer" },
+		sky = "sunset",
 	},
 }
 

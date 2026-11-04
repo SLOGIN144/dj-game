@@ -1,6 +1,8 @@
 --!strict
 -- Everything visible on one plot: the spawn, the owner sign, the register, the location's room,
--- the bought items and the button pads. Only the server changes these; they replicate to everyone.
+-- the bought items and the button pads. A location built in a venue (Ibiza) puts its room, pads,
+-- register and spawn there instead (Shared/Util/PlotSpace), and the street plot keeps the last
+-- club up as a showcase. Only the server changes these; they replicate to everyone.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -11,8 +13,11 @@ local Bounds = require(ReplicatedStorage.Shared.Util.Bounds)
 local Builder = require(script.Parent.Builder)
 local Building = require(script.Parent.Building)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local Items = require(ReplicatedStorage.Shared.Config.Items)
 local PartFactory = require(script.Parent.PartFactory)
 local PlotLayout = require(ReplicatedStorage.Shared.Config.PlotLayout)
+local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
+local StreetProps = require(script.Parent.StreetProps)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 local PlotView = {}
@@ -20,12 +25,19 @@ local PlotView = {}
 export type Pad = { item: Types.Item, effect: Types.ItemEffect }
 
 local PAD_COLOUR = Color3.fromRGB(70, 255, 140)
+local MOVE_ON_COLOUR = Color3.fromRGB(255, 196, 60)
 local REGISTER_TEXT = Color3.fromRGB(120, 255, 160)
 local REGISTER_FULL = Color3.fromRGB(255, 170, 60)
 local POP_IN = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
+-- The street plot's own origin (the sign, the walkway, the building, the showcase).
 local function origin(plot: Model): CFrame
 	return plot:GetPivot()
+end
+
+local function plotIndex(plot: Model): number
+	local index = plot:GetAttribute("PlotIndex")
+	return if typeof(index) == "number" then index else 1
 end
 
 local function child(plot: Model, name: string): Instance
@@ -65,7 +77,7 @@ function PlotView.setup(plot: Model)
 	spawn.Duration = 0
 	spawn.Anchored = true
 	spawn.Size = Vector3.new(6, 0.4, 6)
-	spawn.CFrame = root * CFrame.new(PlotLayout.spawn + Vector3.new(0, 0.2, 0))
+	spawn.CFrame = root * CFrame.new(PlotLayout.spawn + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, math.pi, 0)
 	spawn.Color = Color3.fromRGB(150, 90, 255)
 	spawn.Material = Enum.Material.Neon
 	spawn.Transparency = 0.4
@@ -143,13 +155,131 @@ function PlotView.setup(plot: Model)
 		label("Hint", registerGui, UDim2.fromScale(0, 0.65), UDim2.fromScale(1, 0.35), Color3.new(0.86, 0.86, 0.9))
 	hint.Text = "Touch to collect"
 
-	for _, name in { "Shell", "Items", "Pads" } do
+	for _, name in { "Shell", "Items", "Pads", "Showcase" } do
 		local folder = Instance.new("Folder")
 		folder.Name = name
 		folder.Parent = plot
 	end
 	PlotView.setOwner(plot, nil)
 	PlotView.setBuilding(plot, "free")
+end
+
+-- A location's room into `folder` at `at`: its imported shell model, or its blockout.
+local function buildRoom(folder: Instance, locationId: string, at: CFrame)
+	folder:ClearAllChildren()
+	local art = Art.find(locationId, "Shell")
+	if art then
+		Art.place(art, at, folder)
+		return
+	end
+	for _, spec in Blockouts[locationId].shell do
+		PartFactory.build(spec, at, folder)
+	end
+end
+
+-- One item into `folder` at `at`: its imported model, or its blockout parts (rising into place
+-- with `animate`). An item that replaces an earlier one takes its place in the folder.
+local function buildItem(folder: Instance, locationId: string, item: Types.Item, at: CFrame, animate: boolean)
+	if item.replaces then
+		local replaced = folder:FindFirstChild(item.replaces)
+		if replaced then
+			replaced:Destroy()
+		end
+	end
+	local specs: { Types.PartSpec } = Blockouts[locationId].items[item.id] or {}
+	local art = Art.find(locationId, item.id)
+	if art then
+		local placed = Art.place(art, at * CFrame.new(Bounds.anchor(specs)), folder)
+		placed.Name = item.id
+		return
+	end
+	local model = Instance.new("Model")
+	model.Name = item.id
+	model.Parent = folder
+	for _, spec in specs do
+		local part = PartFactory.build(spec, at, model)
+		if animate then
+			local target = part.CFrame
+			local transparency = part.Transparency
+			part.CFrame = target * CFrame.new(0, -1, 0)
+			part.Transparency = 1
+			TweenService:Create(part, POP_IN, { CFrame = target, Transparency = transparency }):Play()
+		end
+	end
+end
+
+-- Puts the register and the spawn where the layout has them, relative to `at`.
+local function placeFixtures(plot: Model, layout: PlotSpace.Layout, at: CFrame)
+	PlotView.register(plot):PivotTo(at * CFrame.new(layout.register + Vector3.new(0, 1.5, 0)))
+	-- Turned to face the room: characters spawn looking the way their spawn does.
+	PlotView.spawn(plot).CFrame = at * CFrame.new(layout.spawn + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, math.pi, 0)
+end
+
+-- The jet at a venue that flies its owner back to the street (Services/Travel handles the prompt).
+local function venueJet(plot: Model, layout: PlotSpace.Layout, at: CFrame, folder: Instance)
+	local jetAt = layout.jet
+	if not jetAt then
+		return
+	end
+	local cframe = at * CFrame.new(jetAt)
+	StreetProps.jet(cframe, folder)
+	local door = Instance.new("Part")
+	door.Name = "JetDoor"
+	door.Anchored = true
+	door.CanCollide = false
+	door.Transparency = 1
+	door.Size = Vector3.new(2, 2, 2)
+	door.CFrame = cframe * CFrame.new(-11, 3, -6)
+	door.Parent = folder
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "TravelPrompt"
+	prompt.ActionText = "Fly to the city"
+	prompt.ObjectText = "Private jet"
+	prompt.MaxActivationDistance = 14
+	prompt.RequiresLineOfSight = false
+	prompt:SetAttribute("Travel", "street")
+	prompt:SetAttribute("OwnerUserId", plot:GetAttribute("OwnerUserId")) -- clients hide it from everyone else
+	prompt.Parent = door
+end
+
+-- Sets the plot up for a location: the building on the street, the room (on the plot, or at the
+-- plot's venue), the register and the spawn where the location has them, and while the room is
+-- away at the venue, the last club left standing on the street. Items and pads start empty;
+-- Plots and Shop add the bought items and the buttons.
+function PlotView.setLocation(plot: Model, locationId: string)
+	-- The origin first: clients read it when LocationId changes.
+	local venue = PlotSpace.isVenue(locationId)
+	plot:SetAttribute("SpaceOrigin", if venue then PlotSpace.venueOrigin(plotIndex(plot)) else nil)
+	plot:SetAttribute("LocationId", locationId)
+	PlotView.setBuilding(plot, locationId)
+	child(plot, "Items"):ClearAllChildren()
+	child(plot, "Pads"):ClearAllChildren()
+
+	local at = PlotSpace.origin(plot)
+	local layout = PlotSpace.layout(locationId)
+	local shell = child(plot, "Shell")
+	buildRoom(shell, locationId, at)
+	if venue then
+		venueJet(plot, layout, at, shell)
+	end
+
+	local showcase = child(plot, "Showcase")
+	showcase:ClearAllChildren()
+	local shown = if venue then PlotSpace.showcaseFor(locationId) else nil
+	if shown then
+		local room = Instance.new("Folder")
+		room.Name = "Room"
+		room.Parent = showcase
+		buildRoom(room, shown, origin(plot))
+		local items: { Types.Item } = Items[shown] or {}
+		for _, item in items do
+			-- The register works where the owner is; a second one on the street would only confuse.
+			if item.feature ~= "register" then
+				buildItem(showcase, shown, item, origin(plot), false)
+			end
+		end
+	end
+	placeFixtures(plot, layout, at)
 end
 
 -- The building behind the room, for a location or "free" (Config/Buildings).
@@ -172,76 +302,57 @@ function PlotView.spawn(plot: Model): SpawnLocation
 	return child(plot, "Spawn") :: SpawnLocation
 end
 
-function PlotView.setShell(plot: Model, locationId: string)
-	plot:SetAttribute("LocationId", locationId)
-	PlotView.setBuilding(plot, locationId)
-	local shell = child(plot, "Shell")
-	shell:ClearAllChildren()
-	local art = Art.find(locationId, "Shell")
-	if art then
-		Art.place(art, origin(plot), shell)
-		return
-	end
-	for _, spec in Blockouts[locationId].shell do
-		PartFactory.build(spec, origin(plot), shell)
-	end
-end
-
--- Builds a bought item: its imported model if there is one, else its blockout parts. With
--- `animate`, blockout parts rise into place and fade in.
+-- Builds a bought item at the plot's location. With `animate`, blockout parts rise into place
+-- and fade in.
 function PlotView.showItem(plot: Model, locationId: string, itemId: string, animate: boolean)
-	local specs: { Types.PartSpec } = Blockouts[locationId].items[itemId] or {}
-	local art = Art.find(locationId, itemId)
-	if art then
-		local placed = Art.place(art, origin(plot) * CFrame.new(Bounds.anchor(specs)), child(plot, "Items"))
-		placed.Name = itemId
-		return
-	end
-	local model = Instance.new("Model")
-	model.Name = itemId
-	model.Parent = child(plot, "Items")
-	for _, spec in specs do
-		local part = PartFactory.build(spec, origin(plot), model)
-		if animate then
-			local target = part.CFrame
-			local transparency = part.Transparency
-			part.CFrame = target * CFrame.new(0, -1, 0)
-			part.Transparency = 1
-			TweenService:Create(part, POP_IN, { CFrame = target, Transparency = transparency }):Play()
+	local items: { Types.Item } = Items[locationId] or {}
+	for _, item in items do
+		if item.id == itemId then
+			buildItem(child(plot, "Items"), locationId, item, PlotSpace.origin(plot), animate)
+			return
 		end
 	end
 end
 
--- Removes the room, the items and the pads, the plot's state attributes, and empties the register label.
+-- Removes the room, the items, the pads and the showcase, the plot's state attributes, puts the
+-- register and the spawn back on the street and empties the register label.
 function PlotView.clear(plot: Model)
-	for _, name in { "Shell", "Items", "Pads" } do
+	for _, name in { "Shell", "Items", "Pads", "Showcase" } do
 		child(plot, name):ClearAllChildren()
 	end
-	for _, attribute in { "LocationId", "Guests", "Boost", "BoostEndsAt", "SpeakerBlown" } do
+	for _, attribute in { "LocationId", "SpaceOrigin", "Guests", "Boost", "BoostEndsAt", "SpeakerBlown", "StarDj" } do
 		plot:SetAttribute(attribute, nil)
 	end
+	placeFixtures(plot, PlotSpace.layout(nil), origin(plot))
 	PlotView.setRegister(plot, 0, false)
 	PlotView.setBuilding(plot, "free")
 end
 
--- Replaces the button pads with one per entry, in the layout's button slots.
+-- A glowing pad with a floating label, at a button slot of the plot's location.
+local function makePad(plot: Model, name: string, slot: Vector3, colour: Color3, size: number): Part
+	local part = Instance.new("Part")
+	part.Name = name
+	part.Anchored = true
+	part.CanCollide = false
+	part.Size = Vector3.new(size, 0.3, size)
+	part.CFrame = PlotSpace.origin(plot) * CFrame.new(slot + Vector3.new(0, 0.15, 0))
+	part.Color = colour
+	part.Material = Enum.Material.Neon
+	part.Transparency = 0.2
+	return part
+end
+
+-- Replaces the button pads with one per entry, in the location's button slots.
 function PlotView.setPads(plot: Model, pads: { Pad }, onTouched: (itemId: string, hit: BasePart) -> ())
 	local folder = child(plot, "Pads")
 	folder:ClearAllChildren()
+	local slots = PlotSpace.layout(PlotSpace.locationId(plot)).buttonSlots
 	for index, entry in pads do
-		local slot = PlotLayout.buttonSlots[index]
+		local slot = slots[index]
 		if not slot then
 			break
 		end
-		local pad = Instance.new("Part")
-		pad.Name = "Pad_" .. entry.item.id
-		pad.Anchored = true
-		pad.CanCollide = false
-		pad.Size = Vector3.new(PlotLayout.padSize, 0.3, PlotLayout.padSize)
-		pad.CFrame = origin(plot) * CFrame.new(slot + Vector3.new(0, 0.15, 0))
-		pad.Color = PAD_COLOUR
-		pad.Material = Enum.Material.Neon
-		pad.Transparency = 0.2
+		local pad = makePad(plot, "Pad_" .. entry.item.id, slot, PAD_COLOUR, PlotLayout.padSize)
 		pad:SetAttribute("ItemId", entry.item.id)
 		pad:SetAttribute("Price", entry.effect.cost)
 
@@ -263,6 +374,23 @@ function PlotView.setPads(plot: Model, pads: { Pad }, onTouched: (itemId: string
 		end)
 		pad.Parent = folder
 	end
+end
+
+-- Replaces the button pads with the Move On pad, once the location is finished: stepping on it
+-- moves the plot on to `nextName`.
+function PlotView.setMoveOn(plot: Model, nextName: string, onTouched: (hit: BasePart) -> ())
+	local folder = child(plot, "Pads")
+	folder:ClearAllChildren()
+	local slots = PlotSpace.layout(PlotSpace.locationId(plot)).buttonSlots
+	local slot = slots[PlotLayout.moveOnSlot] or slots[1]
+	local part = makePad(plot, "Pad_MoveOn", slot, MOVE_ON_COLOUR, PlotLayout.padSize + 1)
+	part:SetAttribute("MoveOn", nextName)
+	local gui = billboard(part, Vector2.new(10, 3.6), 3.6)
+	gui.Name = "PadGui"
+	label("ItemName", gui, UDim2.fromScale(0, 0), UDim2.fromScale(1, 0.5), MOVE_ON_COLOUR).Text = "MOVE ON"
+	label("Price", gui, UDim2.fromScale(0, 0.5), UDim2.fromScale(1, 0.5), Color3.new(1, 1, 1)).Text = "to " .. nextName
+	part.Touched:Connect(onTouched)
+	part.Parent = folder
 end
 
 function PlotView.setRegister(plot: Model, amount: number, full: boolean)

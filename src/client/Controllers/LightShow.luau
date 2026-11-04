@@ -4,14 +4,16 @@
 -- drop, and a white blast on the drop's first beat. It runs for every plot in view from the
 -- replicated plan, so visitors see the same show. Parts are found by their "LightRole" attribute
 -- (set from PartSpec.lightRole); lights a player hasn't bought don't exist, so they stay dark.
+-- Spots with a beam (moving heads, lasers) sweep it across the room on the beat. While a plot's
+-- location is away at its venue, the club left on the street (its showcase) keeps the show too.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Locations = require(ReplicatedStorage.Shared.Config.Locations)
 local MixTimeline = require(ReplicatedStorage.Shared.Music.MixTimeline)
-local PlotArea = require(ReplicatedStorage.Shared.Util.PlotArea)
 local PlotMixes = require(script.Parent.PlotMixes)
+local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
 local TrackInfo = require(ReplicatedStorage.Shared.Music.TrackInfo)
 local Types = require(ReplicatedStorage.Shared.Types)
 
@@ -22,6 +24,9 @@ local DROP_BLAST_BEATS = 1.5 -- how long the white blast on a drop's first beat 
 local FLASH_SECONDS = 0.8 -- the extra blast from a Perfect press
 local WHITE = Color3.new(1, 1, 1)
 local BLACK = Color3.new(0, 0, 0)
+local SWEEP_PAN = math.rad(24) -- how far a moving head swings either side on a drop
+local SWEEP_TILT = math.rad(9)
+local FOLDERS = { "Items", "Showcase" }
 
 local SECTION_INTENSITY: { [Types.SectionKind]: number } = {
 	intro = 0.35,
@@ -38,8 +43,11 @@ type LightPart = {
 	colour: Color3, -- the part's own colour, as built
 	light: Light?, -- the PointLight or SpotLight inside it
 	brightness: number, -- the light's own brightness, as built
+	beam: Beam?, -- a light beam out of it (moving heads, lasers)
+	beamBrightness: number,
+	showcase: boolean, -- part of the club left on the street, not the current location
 	foundAt: number,
-	pivot: CFrame?, -- the disco ball's resting CFrame
+	pivot: CFrame?, -- the disco ball's or moving head's resting CFrame
 }
 
 type PlotLights = {
@@ -56,32 +64,38 @@ local plots: { [Model]: PlotLights } = {}
 local function scan(plot: Model, entry: PlotLights)
 	entry.parts = {}
 	entry.dirty = false
-	local items = plot:FindFirstChild("Items")
-	if not items then
-		return
-	end
 	local counts: { [string]: number } = {}
-	for _, descendant in items:GetDescendants() do
-		local role = descendant:GetAttribute("LightRole")
-		if descendant:IsA("BasePart") and typeof(role) == "string" then
-			counts[role] = (counts[role] or 0) + 1
-			local item = entry.known[descendant]
-			if not item then
-				local light = descendant:FindFirstChildWhichIsA("Light")
-				item = {
-					part = descendant,
-					role = role :: Types.LightRole,
-					index = 0,
-					colour = descendant.Color,
-					light = light,
-					brightness = if light then light.Brightness else 0,
-					foundAt = os.clock(),
-				}
-				entry.known[descendant] = item
+	for _, name in FOLDERS do
+		local folder = plot:FindFirstChild(name)
+		if not folder then
+			continue
+		end
+		for _, descendant in folder:GetDescendants() do
+			local role = descendant:GetAttribute("LightRole")
+			if descendant:IsA("BasePart") and typeof(role) == "string" then
+				counts[role] = (counts[role] or 0) + 1
+				local item = entry.known[descendant]
+				if not item then
+					local light = descendant:FindFirstChildWhichIsA("Light")
+					local beam = descendant:FindFirstChildWhichIsA("Beam")
+					item = {
+						part = descendant,
+						role = role :: Types.LightRole,
+						index = 0,
+						colour = descendant.Color,
+						light = light,
+						brightness = if light then light.Brightness else 0,
+						beam = beam,
+						beamBrightness = if beam then beam.Brightness else 1,
+						showcase = name == "Showcase",
+						foundAt = os.clock(),
+					}
+					entry.known[descendant] = item
+				end
+				local found = item :: LightPart
+				found.index = counts[role]
+				table.insert(entry.parts, found)
 			end
-			local found = item :: LightPart
-			found.index = counts[role]
-			table.insert(entry.parts, found)
 		end
 	end
 end
@@ -96,25 +110,24 @@ local function watch(plot: Model)
 		flashStrength = 0,
 	}
 	plots[plot] = entry
-	local items = plot:WaitForChild("Items", 10)
-	if items then
-		items.DescendantAdded:Connect(function()
-			entry.dirty = true
-		end)
-		items.DescendantRemoving:Connect(function()
-			entry.dirty = true
+	for _, name in FOLDERS do
+		task.spawn(function()
+			local folder = plot:WaitForChild(name, 10)
+			if folder then
+				folder.DescendantAdded:Connect(function()
+					entry.dirty = true
+				end)
+				folder.DescendantRemoving:Connect(function()
+					entry.dirty = true
+				end)
+			end
 		end)
 	end
 end
 
-local function palette(plot: Model): { Color3 }
-	local locationId = plot:GetAttribute("LocationId")
-	for _, location in Locations do
-		if location.id == locationId then
-			return location.lights
-		end
-	end
-	return Locations[1].lights
+local function palette(locationId: string?): { Color3 }
+	local location = PlotSpace.location(locationId)
+	return if location then location.lights else Locations[1].lights
 end
 
 -- Puts every light back to how it was built (no music on the plot).
@@ -127,6 +140,13 @@ local function rest(entry: PlotLights)
 		item.part.Color = item.colour
 		if item.light then
 			item.light.Brightness = item.brightness
+		end
+		if item.beam then
+			item.beam.Color = ColorSequence.new(item.colour)
+			item.beam.Brightness = item.beamBrightness
+		end
+		if item.pivot then
+			item.part.CFrame = item.pivot
 		end
 	end
 end
@@ -189,16 +209,20 @@ local function drive(plot: Model, entry: PlotLights, now: number)
 	end
 
 	local blown = plot:GetAttribute("SpeakerBlown") == true
-	local colours = palette(plot)
-	local colour = colours[1]
-	if kind == "drop" then
-		colour = colours[bar % #colours + 1]
-	elseif kind == "breakdown" then
-		colour = colours[1]:Lerp(colours[#colours], 0.5 + 0.5 * math.sin(beat * math.pi / 16))
+	local locationId = PlotSpace.locationId(plot)
+	local function wash(colours: { Color3 }): Color3
+		if kind == "drop" then
+			return colours[bar % #colours + 1]
+		elseif kind == "breakdown" then
+			return colours[1]:Lerp(colours[#colours], 0.5 + 0.5 * math.sin(beat * math.pi / 16))
+		end
+		return colours[1]
 	end
+	local colour = wash(palette(locationId))
+	local showcaseColour = wash(palette(if locationId then PlotSpace.showcaseFor(locationId) else nil))
 
 	for _, item in entry.parts do
-		local amount, tint = 1, colour
+		local amount, tint = 1, if item.showcase then showcaseColour else colour
 		local role = item.role
 		if role == "led" then
 			amount = 0.35 + 0.65 * intensity * (0.6 + 0.4 * kick)
@@ -217,6 +241,15 @@ local function drive(plot: Model, entry: PlotLights, now: number)
 				amount = 0.25 + 0.6 * kick * intensity
 			else
 				amount = 0.15
+			end
+			-- A beam sweeps: wide on the drop, a slow sway otherwise. Neighbours mirror each other.
+			if item.beam and os.clock() - item.foundAt > 1 then
+				item.pivot = item.pivot or item.part.CFrame
+				local side = if item.index % 2 == 0 then 1 else -1
+				local reach = if kind == "drop" then 1 elseif kind == "build" then 0.5 + 0.4 * through else 0.25
+				local pan = math.sin(beat * math.pi / 4) * SWEEP_PAN * reach * side
+				local tilt = math.sin(beat * math.pi / 8 + item.index) * SWEEP_TILT * reach
+				item.part.CFrame = (item.pivot :: CFrame) * CFrame.Angles(tilt, pan, 0)
 			end
 		elseif role == "disco" then
 			tint = item.colour
@@ -242,6 +275,11 @@ local function drive(plot: Model, entry: PlotLights, now: number)
 			light.Color = tint:Lerp(WHITE, blast * 0.8)
 			light.Brightness = item.brightness * (0.25 + amount) * (1 + 2 * blast)
 		end
+		local beam = item.beam
+		if beam then
+			beam.Color = ColorSequence.new(tint:Lerp(WHITE, blast * 0.6))
+			beam.Brightness = item.beamBrightness * (0.2 + amount) * (1 + blast)
+		end
 	end
 end
 
@@ -266,7 +304,7 @@ function LightShow.start()
 		local now = PlotMixes.now()
 		local eye = camera.CFrame.Position
 		for plot, entry in plots do
-			if PlotArea.distance(plot:GetPivot(), eye) > VIEW_DISTANCE then
+			if PlotSpace.hearingDistance(plot, eye) > VIEW_DISTANCE then
 				continue
 			end
 			if entry.dirty then

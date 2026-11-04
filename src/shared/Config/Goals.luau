@@ -40,6 +40,7 @@ local Goals: { [string]: Types.Host } = {
 			done = "This room is maxed out! Lena says her place is way bigger. Step on Move On!",
 			speakerBlown = "Uh... is the speaker supposed to smoke? Hold E on it, quick!",
 			speakerFixed = "Good as new. Mostly. Let's not tell the landlord.",
+			jetLocked = "That jet? One day, roomie. One day. Let's fill this room first.",
 		},
 	},
 	house = {
@@ -76,6 +77,7 @@ local Goals: { [string]: Types.Host } = {
 			speakerBlown = "Nooo, the speaker! Hold E on it before the neighbours think we stopped!",
 			speakerFixed = "And we're back! Nobody noticed. Okay, everybody noticed. But we're back!",
 			photographer = "There's a photographer here! Catch the next drop and we're famous.",
+			jetLocked = "A private jet? Ha! Throw the best party on the block first.",
 		},
 	},
 	club = {
@@ -115,6 +117,7 @@ local Goals: { [string]: Types.Host } = {
 			speakerFixed = "Fixed. Keep the bass, lose the smoke.",
 			vip = "VIP at the door. Go say hi before they wander off.",
 			photographer = "Photographer by the booth. Give them a drop worth printing.",
+			jetLocked = "Fill my club every night, and that jet is yours. Not before.",
 		},
 	},
 	ibiza = {

@@ -14,7 +14,7 @@ local AudioEngine = require(script.Parent.AudioEngine)
 local Balance = require(ReplicatedStorage.Shared.Config.Balance)
 local BeatClock = require(script.Parent.BeatClock)
 local MixTimeline = require(ReplicatedStorage.Shared.Music.MixTimeline)
-local PlotArea = require(ReplicatedStorage.Shared.Util.PlotArea)
+local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
 local PlotMixes = require(script.Parent.PlotMixes)
 local Types = require(ReplicatedStorage.Shared.Types)
 
@@ -72,7 +72,7 @@ local function choosePlot(position: Vector3): (Model?, number)
 	local currentDistance = math.huge
 	for _, plot in PlotMixes.plots() do
 		if PlotMixes.get(plot) then
-			local distance = PlotArea.distance(plot:GetPivot(), position)
+			local distance = PlotSpace.hearingDistance(plot, position)
 			if distance < bestDistance then
 				best, bestDistance = plot, distance
 			end

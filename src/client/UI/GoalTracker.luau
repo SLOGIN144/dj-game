@@ -1,13 +1,16 @@
 --!strict
--- The goal tracker (GDD: HUD): the host's portrait and their goals with a tick for each one done,
--- top left. Finished goals come from the "GoalsDone" Player attribute; once all are done the
--- tracker says so and fades away.
+-- The goal tracker (GDD: HUD): the host's portrait and their goals, top left, with a tick for each
+-- one done and a count for the ones that count up ("Catch 3 Perfect drops 1/3"). Finished goals
+-- and counts come from the "GoalsDone" and "GoalProgress" Player attributes, owned tracks from
+-- "OwnedTracks". Once all are done the tracker says so and fades away; moving on brings up the
+-- next host's goals.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local GoalCheck = require(ReplicatedStorage.Shared.Economy.GoalCheck)
 local GoalsConfig = require(ReplicatedStorage.Shared.Config.Goals)
 local OwnPlot = require(script.Parent.Parent.Controllers.OwnPlot)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -32,24 +35,53 @@ local function doneSet(): { [string]: boolean }
 	return set
 end
 
-function GoalTracker.start()
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "Goals"
-	gui.ResetOnSpawn = false
-	gui.DisplayOrder = 3
-	gui.Parent = player:WaitForChild("PlayerGui")
-
-	local plot = OwnPlot.wait()
-	while typeof(plot:GetAttribute("LocationId")) ~= "string" do
-		plot:GetAttributeChangedSignal("LocationId"):Wait()
+local function counts(): { [string]: number }
+	local result = {}
+	local text = player:GetAttribute("GoalProgress")
+	if typeof(text) == "string" then
+		for id, count in string.gmatch(text, "([^,=]+)=(%d+)") do
+			result[id] = tonumber(count) or 0
+		end
 	end
-	local locationId = plot:GetAttribute("LocationId") :: string
+	return result
+end
+
+local function tracksOwned(): number
+	local count = 0
+	local text = player:GetAttribute("OwnedTracks")
+	if typeof(text) == "string" then
+		for _ in string.gmatch(text, "[^,]+") do
+			count += 1
+		end
+	end
+	return count
+end
+
+local function fadeAway(panel: Frame)
+	local fade = TweenInfo.new(1)
+	TweenService:Create(panel, fade, { BackgroundTransparency = 1 }):Play()
+	for _, descendant in panel:GetDescendants() do
+		if descendant:IsA("TextLabel") then
+			TweenService:Create(descendant, fade, { TextTransparency = 1 }):Play()
+		elseif descendant:IsA("UIStroke") then
+			TweenService:Create(descendant, fade, { Transparency = 1 }):Play()
+		elseif descendant:IsA("Frame") then
+			TweenService:Create(descendant, fade, { BackgroundTransparency = 1 }):Play()
+		end
+	end
+	task.delay(1, function()
+		panel.Visible = false
+	end)
+end
+
+-- Builds the tracker for a location's host. Returns its panel and how to refresh it.
+local function build(gui: ScreenGui, locationId: string): (Frame?, () -> ())
 	local host = GoalsConfig[locationId]
 	if not host then
-		return
+		return nil, function() end
 	end
 
-	local panel = Style.panel(gui, "Tracker", UDim2.fromOffset(260, 40 + ROW * #host.goals), UDim2.fromOffset(12, 64))
+	local panel = Style.panel(gui, "Tracker", UDim2.fromOffset(280, 40 + ROW * #host.goals), UDim2.fromOffset(12, 64))
 	Style.stroke(panel, host.colour)
 	local portrait = Instance.new("Frame")
 	portrait.Size = UDim2.fromOffset(26, 26)
@@ -93,7 +125,7 @@ function GoalTracker.start()
 
 	local faded = false
 	local function update()
-		local done = doneSet()
+		local done, progress, owned = doneSet(), counts(), tracksOwned()
 		local all = true
 		for _, goal in host.goals do
 			local row = rows[goal.id]
@@ -102,7 +134,11 @@ function GoalTracker.start()
 				row.TextColor3 = Style.MUTED
 			else
 				all = false
-				row.Text = string.format("○  %s  (%s)", goal.text, Format.money(goal.reward))
+				local needed = GoalCheck.needed(goal)
+				local count = if needed > 1
+					then string.format("  %d/%d", GoalCheck.count(goal, progress, owned), needed)
+					else ""
+				row.Text = string.format("○  %s%s  (%s)", goal.text, count, Format.money(goal.reward))
 				row.TextColor3 = Style.TEXT
 			end
 		end
@@ -110,28 +146,46 @@ function GoalTracker.start()
 		if all and not faded then
 			faded = true
 			task.delay(FADE_AFTER, function()
-				local fade = TweenInfo.new(1)
-				TweenService:Create(panel, fade, { BackgroundTransparency = 1 }):Play()
-				for _, descendant in panel:GetDescendants() do
-					if descendant:IsA("TextLabel") then
-						TweenService:Create(descendant, fade, { TextTransparency = 1 }):Play()
-					elseif descendant:IsA("UIStroke") then
-						TweenService:Create(descendant, fade, { Transparency = 1 }):Play()
-					elseif descendant:IsA("Frame") then
-						TweenService:Create(descendant, fade, { BackgroundTransparency = 1 }):Play()
-					end
+				if panel.Parent then
+					fadeAway(panel)
 				end
-				task.delay(1, function()
-					panel.Visible = false
-				end)
 			end)
 		end
 	end
-	player:GetAttributeChangedSignal("GoalsDone"):Connect(update)
+	update()
+	return panel, update
+end
+
+function GoalTracker.start()
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "Goals"
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 3
+	gui.Parent = player:WaitForChild("PlayerGui")
+
+	local plot = OwnPlot.wait()
+	local panel: Frame? = nil
+	local refresh: () -> () = function() end
+	local function rebuild()
+		if panel then
+			panel:Destroy()
+			panel = nil
+		end
+		local locationId = plot:GetAttribute("LocationId")
+		if typeof(locationId) == "string" then
+			panel, refresh = build(gui, locationId)
+		end
+	end
+	plot:GetAttributeChangedSignal("LocationId"):Connect(rebuild)
+	for _, attribute in { "GoalsDone", "GoalProgress", "OwnedTracks" } do
+		player:GetAttributeChangedSignal(attribute):Connect(function()
+			refresh()
+		end)
+	end
 	Remotes.event("GoalDone").OnClientEvent:Connect(function()
 		Sfx.play("goal")
 	end)
-	update()
+	rebuild()
 end
 
 return GoalTracker

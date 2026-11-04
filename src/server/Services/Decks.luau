@@ -15,6 +15,7 @@ local Blockouts = require(ReplicatedStorage.Shared.Config.Blockouts)
 local Boost = require(ReplicatedStorage.Shared.Economy.Boost)
 local Music = require(script.Parent.Music)
 local PlayerState = require(script.Parent.PlayerState)
+local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 local TimingJudge = require(ReplicatedStorage.Shared.Music.TimingJudge)
@@ -41,7 +42,7 @@ local function atDecks(state: PlayerState.State): boolean
 	if not root or not root:IsA("BasePart") then
 		return false
 	end
-	local stand = state.plot:GetPivot() * blockout.decks.stand
+	local stand = PlotSpace.origin(state.plot) * blockout.decks.stand
 	local offset = root.Position - stand
 	return Vector2.new(offset.X, offset.Z).Magnitude <= Balance.Boost.decksRange
 end

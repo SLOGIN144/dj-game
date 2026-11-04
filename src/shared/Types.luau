@@ -71,6 +71,7 @@ export type Location = {
 	space: Space,
 	spaceSize: Vector3, -- the area the location's music and events cover, around its origin
 	events: { EventKind }, -- the club events that can happen here
+	sky: string?, -- a look from Config/Skies while the player is here; the street's night when nil
 }
 
 -- A fictional star DJ the player can book for a guest set (GDD: star DJs). Never a real DJ.
@@ -130,8 +131,9 @@ export type Blockout = {
 		cameraLookAt: Vector3,
 	},
 	speakerItem: string?, -- the item the blown speaker event happens to
-	-- Where the buttons, the register and the spawn go, when not where Config/PlotLayout says.
-	layout: { buttonSlots: { Vector3 }, register: Vector3, spawn: Vector3 }?,
+	-- Where the buttons, the register and the spawn go, when not where Config/PlotLayout says,
+	-- and for a venue, where its jet back to the street stands (nose towards -X).
+	layout: { buttonSlots: { Vector3 }, register: Vector3, spawn: Vector3, jet: Vector3? }?,
 }
 
 -- What a goal counts: collecting from the register, buying a given item, catching a drop
@@ -162,6 +164,7 @@ export type Host = {
 		speakerFixed: string,
 		vip: string?, -- when a VIP arrives
 		photographer: string?, -- when a photographer turns up
+		jetLocked: string?, -- when the player asks for the jet before they've earned it
 	},
 }
 

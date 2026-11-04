@@ -14,6 +14,7 @@ local NAMES = {
 	"Say", -- server -> player: a line from the location's host character
 	"GoalDone", -- server -> player: a goal was finished, and its reward
 	"EventNotice", -- server -> owner: an event started or ended on their plot
+	"Travel", -- server -> player: fade the screen out ("out") or back in ("in"), with a line of text
 }
 
 local Remotes = {}

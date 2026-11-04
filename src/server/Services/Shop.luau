@@ -1,6 +1,7 @@
 --!strict
 -- The button pads on each plot and buying from them. The server checks every purchase: only the
--- plot's owner, only a shown button, only with enough cash.
+-- plot's owner, only a shown button, only with enough cash. Once a location is finished, its
+-- buttons give way to the Move On pad (Services/Progression moves the plot on).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,6 +9,7 @@ local RunService = game:GetService("RunService")
 
 local PlayerState = require(script.Parent.PlayerState)
 local PlotLayout = require(ReplicatedStorage.Shared.Config.PlotLayout)
+local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
 local PlotView = require(script.Parent.Parent.World.PlotView)
 local Pricing = require(ReplicatedStorage.Shared.Economy.Pricing)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
@@ -15,9 +17,13 @@ local Unlocks = require(ReplicatedStorage.Shared.Economy.Unlocks)
 
 local Shop = {}
 
--- Fires (state, itemId) after a purchase, and (state) once the location's last item is bought.
+-- Fires (state, itemId) after a purchase, (state) once the location's last item is bought, and
+-- (state) when the owner steps on the Move On pad.
 Shop.bought = Signal.new()
 Shop.completed = Signal.new()
+Shop.moveOnPressed = Signal.new()
+
+local MOVE_ON = "MoveOn" -- what `blocked` holds while the Move On pad is under its owner's feet
 
 local BUY_LOCK = 0.3 -- seconds between two purchases by one player, so one step buys once
 local STAND_RADIUS = PlotLayout.padSize / 2 + 1 -- a character this close to a pad's centre stands on it
@@ -39,8 +45,8 @@ local function standingSlot(state: PlayerState.State): number?
 	if not part then
 		return nil
 	end
-	local position = state.plot:GetPivot():PointToObjectSpace(part.Position)
-	for index, slot in PlotLayout.buttonSlots do
+	local position = PlotSpace.origin(state.plot):PointToObjectSpace(part.Position)
+	for index, slot in PlotSpace.layout(state.locationId).buttonSlots do
 		if Vector2.new(position.X - slot.X, position.Z - slot.Z).Magnitude <= STAND_RADIUS then
 			return index
 		end
@@ -48,8 +54,33 @@ local function standingSlot(state: PlayerState.State): number?
 	return nil
 end
 
--- Shows the next items of the owner's location as button pads.
+local function isOwner(state: PlayerState.State, hit: BasePart): boolean
+	local character = hit:FindFirstAncestorOfClass("Model")
+	return character ~= nil and Players:GetPlayerFromCharacter(character) == state.player
+end
+
+-- Shows the Move On pad for a finished location with another one after it.
+local function offerMoveOn(state: PlayerState.State): boolean
+	local nextId = Unlocks.nextLocation(state.locationId)
+	local location = PlotSpace.location(nextId)
+	if not location or not Unlocks.isComplete(state.locationId, state.bought) then
+		return false
+	end
+	PlotView.setMoveOn(state.plot, location.name, function(hit)
+		if blocked[state.player] ~= MOVE_ON and isOwner(state, hit) then
+			Shop.moveOnPressed:fire(state)
+		end
+	end)
+	blocked[state.player] = if standingSlot(state) == PlotLayout.moveOnSlot then MOVE_ON else nil
+	return true
+end
+
+-- Shows the next items of the owner's location as button pads, or the Move On pad once they're
+-- all bought.
 function Shop.refresh(state: PlayerState.State)
+	if offerMoveOn(state) then
+		return
+	end
 	local effects = Pricing.effects(state.locationId)
 	local pads: { PlotView.Pad } = {}
 	for _, item in Unlocks.visible(state.locationId, state.bought) do
@@ -57,8 +88,7 @@ function Shop.refresh(state: PlayerState.State)
 	end
 
 	PlotView.setPads(state.plot, pads, function(itemId, hit)
-		local character = hit:FindFirstAncestorOfClass("Model")
-		if character and Players:GetPlayerFromCharacter(character) == state.player then
+		if isOwner(state, hit) then
 			Shop.buy(state, itemId)
 		end
 	end)
@@ -91,7 +121,6 @@ function Shop.buy(state: PlayerState.State, itemId: string): boolean
 
 	Shop.bought:fire(state, itemId)
 	if Unlocks.isComplete(state.locationId, state.bought) then
-		-- Move on to the next location comes in Milestone 2; for now the host says more is coming.
 		Shop.completed:fire(state)
 	end
 	return true

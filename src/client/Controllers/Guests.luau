@@ -5,12 +5,17 @@
 -- entrance, then dances on the plot's beat: knees bounce on every beat, a sway each bar, arms
 -- that rise through the build and go up on the drop, and a jump on drops and Perfect presses.
 -- Every client builds the same figures from the same seeds, so visitors see the same friends.
+-- Only plots in view get figures, nearest first, within a budget for the whole client
+-- (Balance.Guests: about 40 on PC, 15 on mobile), so a big crowd shows its front rows.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local Balance = require(ReplicatedStorage.Shared.Config.Balance)
 
 local Blockouts = require(ReplicatedStorage.Shared.Config.Blockouts)
-local PlotArea = require(ReplicatedStorage.Shared.Util.PlotArea)
+local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
 local PlotMixes = require(script.Parent.PlotMixes)
 local PlotMusic = require(script.Parent.PlotMusic)
 local Sfx = require(script.Parent.Sfx)
@@ -51,7 +56,13 @@ type Guest = {
 	style: number, -- 1 or 2: two slightly different arm moves
 }
 
-type PlotGuests = { guests: { Guest }, jumpAt: number, settled: boolean }
+type PlotGuests = {
+	guests: { Guest },
+	jumpAt: number,
+	settled: boolean,
+	wanted: number, -- the plot's "Guests" last frame, to hear a friend arrive
+	locationId: string?, -- the location the figures stand in
+}
 
 local plots: { [Model]: PlotGuests } = {}
 local folder: Folder
@@ -100,28 +111,37 @@ local function newGuest(plot: Model, index: number, spot: Vector3): Guest
 	}
 end
 
--- Adds or removes figures until the plot shows as many as its "Guests" attribute asks.
-local function fit(plot: Model, entry: PlotGuests, blockout: Types.Blockout?)
+local function wantedGuests(plot: Model, blockout: Types.Blockout?): number
 	local wanted = plot:GetAttribute("Guests")
-	local count = if typeof(wanted) == "number" and blockout then math.min(wanted, #blockout.guests.spots) else 0
+	return if typeof(wanted) == "number" and blockout then math.min(wanted, #blockout.guests.spots) else 0
+end
+
+-- Adds or removes figures until the plot shows as many as its "Guests" attribute asks, or as
+-- many as it's `allowed`.
+local function fit(plot: Model, entry: PlotGuests, blockout: Types.Blockout?, locationId: string?, allowed: number)
+	local wanted = wantedGuests(plot, blockout)
+	local count = math.min(wanted, allowed)
+	if entry.locationId ~= locationId then
+		count = 0 -- moved on: everyone walks in again at the new place
+		entry.locationId = locationId
+		entry.settled = false
+	end
 	while #entry.guests > count do
 		local guest = table.remove(entry.guests) :: Guest
 		guest.model:Destroy()
 	end
 	if blockout then
-		local arrived = #entry.guests < count
 		while #entry.guests < count do
 			local index = #entry.guests + 1
 			table.insert(entry.guests, newGuest(plot, index, blockout.guests.spots[index]))
 		end
-		-- A knock at the door when a friend arrives where you are (not for the crowd already there).
-		if arrived and entry.settled and PlotMusic.listening() == plot then
-			Sfx.play("knock")
-		end
-		entry.settled = true
-	else
-		entry.settled = false
 	end
+	-- A knock at the door when a friend arrives where you are (not for the crowd already there).
+	if entry.settled and wanted > entry.wanted and PlotMusic.listening() == plot then
+		Sfx.play("knock")
+	end
+	entry.wanted = wanted
+	entry.settled = blockout ~= nil
 end
 
 -- Arm angle (radians, 0 = hanging, pi = straight up) and knee dip for the moment in the track.
@@ -147,7 +167,7 @@ local function animate(
 	parts: { BasePart },
 	frames: { CFrame }
 )
-	local origin = plot:GetPivot()
+	local origin = PlotSpace.origin(plot)
 	local _, main = PlotMixes.at(plot, now)
 	local mix = PlotMixes.get(plot)
 	local boost = plot:GetAttribute("Boost")
@@ -238,8 +258,10 @@ function Guests.start()
 	folder.Parent = workspace
 
 	for _, plot in PlotMixes.plots() do
-		plots[plot] = { guests = {}, jumpAt = -math.huge, settled = false }
+		plots[plot] = { guests = {}, jumpAt = -math.huge, settled = false, wanted = 0, locationId = nil }
 	end
+	local mobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+	local budget = if mobile then Balance.Guests.renderBudgetMobile else Balance.Guests.renderBudget
 
 	RunService.RenderStepped:Connect(function()
 		local camera = workspace.CurrentCamera
@@ -250,11 +272,32 @@ function Guests.start()
 		local eye = camera.CFrame.Position
 		local parts: { BasePart } = {}
 		local frames: { CFrame } = {}
+
+		-- The plots in view, nearest first, share the budget.
+		type InView = { plot: Model, distance: number }
+		local inView: { InView } = {}
+		for plot in plots do
+			local distance = PlotSpace.distance(plot, eye)
+			if distance <= VIEW_DISTANCE then
+				table.insert(inView, { plot = plot, distance = distance })
+			end
+		end
+		table.sort(inView, function(a, b)
+			return a.distance < b.distance
+		end)
+		local allowed: { [Model]: number } = {}
+		local left = budget
+		for _, seen in inView do
+			allowed[seen.plot] = left
+			local locationId = PlotSpace.locationId(seen.plot)
+			left = math.max(0, left - wantedGuests(seen.plot, if locationId then Blockouts[locationId] else nil))
+		end
+
 		for plot, entry in plots do
-			local locationId = plot:GetAttribute("LocationId")
-			local blockout = if typeof(locationId) == "string" then Blockouts[locationId] else nil
-			fit(plot, entry, blockout)
-			if blockout and #entry.guests > 0 and PlotArea.distance(plot:GetPivot(), eye) <= VIEW_DISTANCE then
+			local locationId = PlotSpace.locationId(plot)
+			local blockout = if locationId then Blockouts[locationId] else nil
+			fit(plot, entry, blockout, locationId, allowed[plot] or 0)
+			if blockout and #entry.guests > 0 then
 				animate(plot, entry, blockout, now, parts, frames)
 			end
 		end

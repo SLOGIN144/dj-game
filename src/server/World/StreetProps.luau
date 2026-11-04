@@ -318,9 +318,36 @@ function StreetProps.build(parent: Instance, layout: Layout)
 	billboard(CFrame.lookAt(Vector3.new(-half + 3, 0, 0), Vector3.new(0, 0, 0)), folder)
 
 	-- The gate, the airstrip and the jet at the far end.
-	gate(CFrame.lookAt(Vector3.new(half - 3, 0, 0), Vector3.new(-1000, 0, 0)), layout.roadWidth + 2, folder)
+	local gateAt = CFrame.lookAt(Vector3.new(half - 3, 0, 0), Vector3.new(-1000, 0, 0))
+	gate(gateAt, layout.roadWidth + 2, folder)
 	airstrip(half, layout.airstripLength, folder)
 	jet(CFrame.new(half + 48, 0.2, -2) * CFrame.Angles(0, math.rad(12), 0), folder)
+
+	-- The prompt at the gate that flies an owner to their venue once they have one (Services/Travel
+	-- checks; clients show it as locked until then).
+	local anchor = Instance.new("Part")
+	anchor.Name = "GatePrompt"
+	anchor.Anchored = true
+	anchor.CanCollide = false
+	anchor.CanQuery = false
+	anchor.Transparency = 1
+	anchor.Size = Vector3.new(2, 2, 2)
+	anchor.CFrame = gateAt * CFrame.new(0, 4, -2)
+	anchor.Parent = folder
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "TravelPrompt"
+	prompt.ActionText = "Fly to Ibiza"
+	prompt.ObjectText = "Private jet"
+	prompt.MaxActivationDistance = 16
+	prompt.RequiresLineOfSight = false
+	prompt:SetAttribute("Travel", "venue")
+	prompt.Parent = anchor
+end
+
+-- The private jet as a prop, nose towards -X, wheels on the ground at `cframe` (also used at
+-- each venue's runway).
+function StreetProps.jet(cframe: CFrame, parent: Instance)
+	jet(cframe, parent)
 end
 
 -- The billboard's screen part, where the leaderboard draws.

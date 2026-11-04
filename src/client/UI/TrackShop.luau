@@ -126,7 +126,7 @@ function TrackShop.start()
 	gui.DisplayOrder = 10
 
 	local panel = Style.panel(gui, "Panel", UDim2.fromScale(0.9, 0.8), UDim2.fromScale(0.5, 0.5), Vector2.new(0.5, 0.5))
-	Style.stroke(panel, Style.accent())
+	Style.follow(Style.stroke(panel, Style.accent()), "Color")
 	local limit = Instance.new("UISizeConstraint")
 	limit.MaxSize = Vector2.new(440, 420)
 	limit.Parent = panel

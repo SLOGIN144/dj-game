@@ -11,6 +11,7 @@ local PlayerData = require(script.Parent.PlayerData)
 local PlayerState = require(script.Parent.PlayerState)
 local PlotView = require(script.Parent.Parent.World.PlotView)
 local Street = require(script.Parent.Parent.World.Street)
+local Travel = require(script.Parent.Travel)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 local Plots = {}
@@ -52,11 +53,10 @@ local function assign(player: Player, onAssigned: (PlayerState.State) -> ())
 
 	PlotView.setOwner(plot, player)
 	player:SetAttribute("PlotIndex", plot:GetAttribute("PlotIndex"))
-	local spawn = PlotView.spawn(plot)
-	player.RespawnLocation = spawn
+	player.RespawnLocation = PlotView.spawn(plot)
 
 	local state = PlayerState.create(player, plot, saved)
-	PlotView.setShell(plot, state.locationId)
+	PlotView.setLocation(plot, state.locationId)
 	-- Rebuild what they had bought, in unlock order, without the pop-in.
 	local items: { Types.Item } = Items[state.locationId] or {}
 	for _, item in items do
@@ -66,10 +66,9 @@ local function assign(player: Player, onAssigned: (PlayerState.State) -> ())
 	end
 	onAssigned(state)
 
-	-- A character that already spawned somewhere else is moved onto the plot.
-	local character = player.Character
-	if character then
-		character:PivotTo(spawn.CFrame * CFrame.new(0, 4, 0))
+	-- A character that already spawned somewhere else is moved to their location.
+	if player.Character then
+		task.spawn(Travel.place, player, Travel.spawnFrame(plot))
 	end
 end
 

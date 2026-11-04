@@ -58,9 +58,10 @@ function Hud.start()
 	gui.ResetOnSpawn = false
 
 	local panel = Style.panel(gui, "Money", UDim2.fromOffset(220, 64), UDim2.new(0.5, 0, 0, 8), Vector2.new(0.5, 0))
-	Style.stroke(panel, accent)
+	Style.follow(Style.stroke(panel, accent), "Color")
 	local cash = Style.label(panel, "Cash", "$0", UDim2.new(1, -24, 0, 34), UDim2.fromOffset(12, 4))
 	local income = Style.label(panel, "Income", "", UDim2.new(1, -24, 0, 20), UDim2.fromOffset(12, 38), accent)
+	Style.follow(income, "TextColor3")
 
 	local function update()
 		cash.Text = Format.money(number(player:GetAttribute("Cash")))

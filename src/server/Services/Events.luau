@@ -12,7 +12,8 @@ local Balance = require(ReplicatedStorage.Shared.Config.Balance)
 local Blockouts = require(ReplicatedStorage.Shared.Config.Blockouts)
 local Economy = require(script.Parent.Economy)
 local PlayerState = require(script.Parent.PlayerState)
-local PlotArea = require(ReplicatedStorage.Shared.Util.PlotArea)
+local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
+local Progression = require(script.Parent.Progression)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 
@@ -61,7 +62,7 @@ end
 local function onPlot(state: PlayerState.State): boolean
 	local character = state.player.Character
 	local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
-	return root ~= nil and root:IsA("BasePart") and PlotArea.contains(state.plot:GetPivot(), root.Position)
+	return root ~= nil and root:IsA("BasePart") and PlotSpace.contains(state.plot, root.Position)
 end
 
 local function fix(state: PlayerState.State, entry: Entry)
@@ -165,7 +166,28 @@ function Events.stop(state: PlayerState.State)
 	state.plot:SetAttribute("SpeakerBlown", nil)
 end
 
+-- Ends the owner's event without a tip (they're moving on) and starts counting afresh.
+local function reset(state: PlayerState.State)
+	local entry = entries[state.player]
+	if not entry then
+		return
+	end
+	local props: { Instance } = entry.props or {}
+	for _, prop in props do
+		prop:Destroy()
+	end
+	entry.props = nil
+	entry.onPlot = 0
+	entry.nextAt = nextDelay()
+	if state.speakerBlown then
+		state.speakerBlown = false
+		state.plot:SetAttribute("SpeakerBlown", nil)
+		Remotes.event("EventNotice"):FireClient(state.player, "speaker", false, 0)
+	end
+end
+
 function Events.start()
+	Progression.leaving:connect(reset)
 	local elapsed = 0
 	RunService.Heartbeat:Connect(function(dt)
 		elapsed += dt

@@ -20,6 +20,7 @@ local MixTimeline = require(ReplicatedStorage.Shared.Music.MixTimeline)
 local OwnPlot = require(script.Parent.OwnPlot)
 local PlotMixes = require(script.Parent.PlotMixes)
 local PlotMusic = require(script.Parent.PlotMusic)
+local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local TimingJudge = require(ReplicatedStorage.Shared.Music.TimingJudge)
 local TrackInfo = require(ReplicatedStorage.Shared.Music.TrackInfo)
@@ -112,7 +113,7 @@ local function enter()
 	if playing or not plot or not layout or not root or not character then
 		return
 	end
-	local origin = plot:GetPivot()
+	local origin = PlotSpace.origin(plot)
 	local stand = origin * layout.decks.stand
 	local items = plot:FindFirstChild("Items")
 	local booth = if items then items:FindFirstChild(layout.decks.itemId) else nil
@@ -176,7 +177,7 @@ local function update()
 		leave()
 		return
 	end
-	local stand = plot:GetPivot() * layout.decks.stand
+	local stand = PlotSpace.origin(plot) * layout.decks.stand
 	local offset = root.Position - stand
 	if Vector2.new(offset.X, offset.Z).Magnitude > Balance.Boost.decksRange then
 		leave()

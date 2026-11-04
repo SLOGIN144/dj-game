@@ -76,7 +76,7 @@ function DecksUI.build(handlers: Handlers)
 	fill = Instance.new("Frame")
 	fill.Name = "Fill"
 	fill.Size = UDim2.fromScale(0, 1)
-	fill.BackgroundColor3 = accent
+	Style.follow(fill, "BackgroundColor3")
 	fill.BorderSizePixel = 0
 	fill.Parent = bar
 	Style.corner(fill, UDim.new(1, 0))
@@ -98,7 +98,7 @@ function DecksUI.build(handlers: Handlers)
 	mainButton.AutoButtonColor = true
 	mainButton.Parent = bottom
 	Style.corner(mainButton, UDim.new(0.5, 0))
-	Style.stroke(mainButton, accent, 3)
+	Style.follow(Style.stroke(mainButton, accent, 3), "Color")
 	buttonScale = Instance.new("UIScale")
 	buttonScale.Parent = mainButton
 	count = Style.label(mainButton, "Count", "DROP", UDim2.fromScale(0.7, 0.4), UDim2.fromScale(0.15, 0.3))
@@ -113,7 +113,7 @@ function DecksUI.build(handlers: Handlers)
 	ring.Visible = false
 	ring.Parent = bottom
 	Style.corner(ring, UDim.new(0.5, 0))
-	ringStroke = Style.stroke(ring, accent, 4)
+	ringStroke = Style.follow(Style.stroke(ring, accent, 4), "Color")
 
 	gradeLabel = Style.label(bottom, "Grade", "", UDim2.fromOffset(240, 40), UDim2.new(0.5, -120, 0, 64), Style.GOLD)
 	gradeLabel.TextTransparency = 1

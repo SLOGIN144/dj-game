@@ -19,9 +19,34 @@ Style.GOLD = Color3.fromRGB(255, 214, 90)
 Style.FONT = Enum.Font.BuilderSansExtraBold
 Style.BODY = Enum.Font.BuilderSansMedium
 
--- The accent of the player's location (the dorm until Move on exists).
+local accent = Locations[1].colour
+-- UI colours that follow the accent: instance -> the colour property to set. Weak, so destroyed
+-- UI drops out by itself.
+local followers: { [Instance]: string } = setmetatable({}, { __mode = "k" }) :: any
+
+-- The accent of the player's location.
 function Style.accent(): Color3
-	return Locations[1].colour
+	return accent
+end
+
+-- Keeps `instance`'s colour `property` (e.g. "Color", "TextColor3") on the location's accent,
+-- also after moving on. Returns the instance.
+function Style.follow<T>(instance: T & Instance, property: string): T
+	followers[instance] = property;
+	(instance :: any)[property] = accent
+	return instance
+end
+
+-- Sets the accent from the player's location (the client calls this when it changes).
+function Style.setLocation(locationId: string?)
+	for _, location in Locations do
+		if location.id == locationId then
+			accent = location.colour
+		end
+	end
+	for instance, property in followers do
+		(instance :: any)[property] = accent
+	end
 end
 
 function Style.corner(parent: GuiObject, radius: UDim?)
@@ -91,7 +116,7 @@ function Style.button(parent: Instance, name: string, text: string, size: UDim2,
 	button.BorderSizePixel = 0
 	button.Parent = parent
 	Style.corner(button)
-	Style.stroke(button, Style.accent())
+	Style.follow(Style.stroke(button, Style.accent()), "Color")
 	local padding = Instance.new("UIPadding")
 	padding.PaddingTop = UDim.new(0, 6)
 	padding.PaddingBottom = UDim.new(0, 6)

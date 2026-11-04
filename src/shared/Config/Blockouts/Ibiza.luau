@@ -639,6 +639,7 @@ local Ibiza: Types.Blockout = {
 		buttonSlots = { v(-7, 0, -16), v(0, 0, -16), v(7, 0, -16) },
 		register = v(16, 0, -24),
 		spawn = v(0, 0, -50),
+		jet = v(34, 0.2, -72),
 	},
 }
 

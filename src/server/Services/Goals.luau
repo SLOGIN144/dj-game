@@ -13,9 +13,11 @@ local Events = require(script.Parent.Events)
 local GoalCheck = require(ReplicatedStorage.Shared.Economy.GoalCheck)
 local GoalsConfig = require(ReplicatedStorage.Shared.Config.Goals)
 local PlayerState = require(script.Parent.PlayerState)
+local Progression = require(script.Parent.Progression)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Shop = require(script.Parent.Shop)
 local TrackShop = require(script.Parent.TrackShop)
+local Travel = require(script.Parent.Travel)
 
 local Goals = {}
 
@@ -101,6 +103,17 @@ function Goals.start()
 	end)
 	TrackShop.bought:connect(function(state: PlayerState.State)
 		happen(state, { kind = "tracks", tracksOwned = TrackShop.owned(state) })
+	end)
+	Progression.moved:connect(function(state: PlayerState.State)
+		-- The new host says hello, and tracks owned already count for their goals.
+		Goals.begin(state)
+		happen(state, { kind = "tracks", tracksOwned = TrackShop.owned(state) })
+	end)
+	Travel.locked:connect(function(state: PlayerState.State)
+		local host = GoalsConfig[state.locationId]
+		if host and host.lines.jetLocked then
+			say(state, host.lines.jetLocked)
+		end
 	end)
 end
 

@@ -22,8 +22,8 @@ local COLLECT_LOCK = 0.5 -- seconds between two collects by one player
 local lastCollect: { [Player]: number } = {}
 
 local function showRegister(state: PlayerState.State)
-	local full = state.income > 0 and state.register >= Register.capacity(state.income)
-	PlotView.setRegister(state.plot, state.register, full)
+	local cap = Register.capacity(state.income, PlayerState.hasFeature(state, "register"))
+	PlotView.setRegister(state.plot, state.register, state.income > 0 and state.register >= cap)
 end
 
 local function collect(state: PlayerState.State, collected: RemoteEvent)
@@ -77,7 +77,7 @@ function Economy.start(plots: { Model })
 		end
 		for _, state in PlayerState.all() do
 			state.stats.playSeconds += dt
-			state.register = Register.fill(state.register, state.income, dt)
+			state.register = Register.fill(state.register, state.income, dt, PlayerState.hasFeature(state, "register"))
 			if updateLabels then
 				showRegister(state)
 			end

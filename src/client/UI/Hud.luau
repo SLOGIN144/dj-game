@@ -1,68 +1,62 @@
 --!strict
--- The HUD: cash and income per second in a panel at the top, and a floating "+$" when the player
--- collects from their register. Values come from the server through Player attributes.
+-- The HUD: cash and income per second in a panel at the top, the active drop boost with its
+-- timer under it, and a floating "+$" when the player collects from their register. Values come
+-- from the server through Player attributes and the player's plot attributes.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Format = require(ReplicatedStorage.Shared.Util.Format)
-local Locations = require(ReplicatedStorage.Shared.Config.Locations)
+local OwnPlot = require(script.Parent.Parent.Controllers.OwnPlot)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Style = require(script.Parent.Style)
 
 local Hud = {}
 
-local PANEL_COLOUR = Color3.fromRGB(16, 16, 24)
-local TEXT_COLOUR = Color3.fromRGB(255, 255, 255)
-local COLLECT_COLOUR = Color3.fromRGB(120, 255, 160)
-local FONT = Enum.Font.BuilderSansExtraBold
 local FLOAT = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local REFRESH = 0.1 -- seconds between boost timer updates
 
-local function label(name: string, parent: Instance, position: UDim2, size: UDim2, colour: Color3): TextLabel
-	local text = Instance.new("TextLabel")
-	text.Name = name
-	text.BackgroundTransparency = 1
-	text.Position = position
-	text.Size = size
-	text.TextColor3 = colour
-	text.TextScaled = true
-	text.Font = FONT
-	text.Parent = parent
-	return text
-end
+local gui: ScreenGui
 
 local function number(value: unknown): number
 	return if typeof(value) == "number" then value else 0
 end
 
+-- Floating text that rises from `position` and fades out.
+function Hud.float(text: string, colour: Color3, position: UDim2?)
+	local popup =
+		Style.label(gui, "Float", text, UDim2.fromOffset(200, 32), position or UDim2.new(0.5, -100, 0, 104), colour)
+	popup.TextStrokeTransparency = 0.5
+	local tween = TweenService:Create(popup, FLOAT, {
+		Position = popup.Position - UDim2.fromOffset(0, 40),
+		TextTransparency = 1,
+		TextStrokeTransparency = 1,
+	})
+	tween.Completed:Connect(function()
+		popup:Destroy()
+	end)
+	tween:Play()
+end
+
+-- The HUD's ScreenGui, for other panels that sit in it.
+function Hud.gui(): ScreenGui
+	return gui
+end
+
 function Hud.start()
 	local player = Players.LocalPlayer
-	-- The dorm's accent for now; it follows the player's location once Move on exists (Milestone 2).
-	local accent = Locations[1].colour
+	local accent = Style.accent()
 
-	local gui = Instance.new("ScreenGui")
+	gui = Instance.new("ScreenGui")
 	gui.Name = "Hud"
 	gui.ResetOnSpawn = false
 
-	local panel = Instance.new("Frame")
-	panel.Name = "Money"
-	panel.AnchorPoint = Vector2.new(0.5, 0)
-	panel.Position = UDim2.new(0.5, 0, 0, 8)
-	panel.Size = UDim2.fromOffset(220, 64)
-	panel.BackgroundColor3 = PANEL_COLOUR
-	panel.BackgroundTransparency = 0.15
-	panel.Parent = gui
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 14)
-	corner.Parent = panel
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = accent
-	stroke.Thickness = 2
-	stroke.Transparency = 0.2
-	stroke.Parent = panel
-
-	local cash = label("Cash", panel, UDim2.new(0, 12, 0, 4), UDim2.new(1, -24, 0, 34), TEXT_COLOUR)
-	local income = label("Income", panel, UDim2.new(0, 12, 0, 38), UDim2.new(1, -24, 0, 20), accent)
+	local panel = Style.panel(gui, "Money", UDim2.fromOffset(220, 64), UDim2.new(0.5, 0, 0, 8), Vector2.new(0.5, 0))
+	Style.stroke(panel, accent)
+	local cash = Style.label(panel, "Cash", "$0", UDim2.new(1, -24, 0, 34), UDim2.fromOffset(12, 4))
+	local income = Style.label(panel, "Income", "", UDim2.new(1, -24, 0, 20), UDim2.fromOffset(12, 38), accent)
 
 	local function update()
 		cash.Text = Format.money(number(player:GetAttribute("Cash")))
@@ -72,23 +66,32 @@ function Hud.start()
 	player:GetAttributeChangedSignal("Income"):Connect(update)
 	update()
 
-	-- "+$X" rises from under the panel and fades out.
-	Remotes.event("Collected").OnClientEvent:Connect(function(amount: unknown)
-		if typeof(amount) ~= "number" then
+	-- The drop boost and how long it has left.
+	local boost = Style.panel(gui, "Boost", UDim2.fromOffset(170, 30), UDim2.new(0.5, 0, 0, 78), Vector2.new(0.5, 0))
+	Style.stroke(boost, Style.GOLD)
+	boost.Visible = false
+	local boostText = Style.label(boost, "Text", "", UDim2.new(1, -16, 1, -8), UDim2.fromOffset(8, 4), Style.GOLD)
+	local sinceRefresh = 0
+	RunService.Heartbeat:Connect(function(dt)
+		sinceRefresh += dt
+		if sinceRefresh < REFRESH then
 			return
 		end
-		local popup = label("Collected", gui, UDim2.new(0.5, -80, 0, 76), UDim2.fromOffset(160, 32), COLLECT_COLOUR)
-		popup.Text = "+" .. Format.money(amount)
-		popup.TextStrokeTransparency = 0.5
-		local tween = TweenService:Create(popup, FLOAT, {
-			Position = popup.Position - UDim2.fromOffset(0, 40),
-			TextTransparency = 1,
-			TextStrokeTransparency = 1,
-		})
-		tween.Completed:Connect(function()
-			popup:Destroy()
-		end)
-		tween:Play()
+		sinceRefresh = 0
+		local plot = OwnPlot.get()
+		local multiplier = if plot then number(plot:GetAttribute("Boost")) else 0
+		local left = if plot then number(plot:GetAttribute("BoostEndsAt")) - workspace:GetServerTimeNow() else 0
+		boost.Visible = multiplier > 1 and left > 0
+		if boost.Visible then
+			boostText.Text = string.format("x%s BOOST  %ds", tostring(multiplier), math.ceil(left))
+		end
+	end)
+
+	-- "+$X" rises from under the panel when collecting.
+	Remotes.event("Collected").OnClientEvent:Connect(function(amount: unknown)
+		if typeof(amount) == "number" then
+			Hud.float("+" .. Format.money(amount), Style.GOOD)
+		end
 	end)
 
 	gui.Parent = player:WaitForChild("PlayerGui")

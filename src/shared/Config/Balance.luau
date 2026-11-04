@@ -73,6 +73,8 @@ Balance.Boost = {
 	perfect = { multiplier = 2, seconds = 30 },
 	good = { multiplier = 1.5, seconds = 20 },
 	lagAllowance = 0.4, -- seconds the server allows between a press and its message arriving
+	clockSlack = 0.15, -- a client's copy of the server clock may run this far ahead
+	pressWindow = 0.5, -- seconds either side of a drop within which a press is for that drop
 	decksRange = 8, -- studs from the DJ spot within which the owner counts as at the decks
 }
 

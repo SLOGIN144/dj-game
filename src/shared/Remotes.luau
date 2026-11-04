@@ -4,7 +4,12 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local NAMES = { "Collected" }
+local NAMES = {
+	"Collected", -- server -> owner: cash collected from the register
+	"DropPress", -- client -> server: the owner pressed for a drop at the decks
+	"DropResult", -- server -> owner: the press's grade and boost
+	"DropHit", -- server -> everyone: a plot caught a drop (confetti, cheer, light blast)
+}
 
 local Remotes = {}
 

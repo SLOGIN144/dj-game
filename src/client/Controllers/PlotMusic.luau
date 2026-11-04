@@ -281,6 +281,22 @@ function PlotMusic.heardBeat(deck: number): number?
 	return (position - track.firstBeat) * track.bpm / 60
 end
 
+-- How far the heard audio of segment `n` is past `beat` of its track, in seconds (negative =
+-- not there yet), or nil when that segment isn't playing here. The decks judge presses by this.
+function PlotMusic.heardOffset(n: number, beat: number): number?
+	for index, deck in decks do
+		local segment = deck.segment
+		local track = if segment and segment.n == n then PlotMixes.tracks[segment.trackId] else nil
+		if track and deck.running then
+			local speed = engine:speed(index)
+			local position = deck.clock:update(engine:position(index), engine:isPlaying(index), speed)
+			local heard = (position - track.firstBeat) * track.bpm / 60
+			return (heard - beat) * 60 / (track.bpm * speed)
+		end
+	end
+	return nil
+end
+
 function PlotMusic.start()
 	engine = AudioEngine.new(SoundService)
 	engine:setMasterVolume(0)

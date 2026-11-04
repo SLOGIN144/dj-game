@@ -4,6 +4,8 @@
 
 local Players = game:GetService("Players")
 
+local OwnPlot = require(script.Parent.Parent.Controllers.OwnPlot)
+
 local PadLabels = {}
 
 local AFFORD = Color3.fromRGB(70, 255, 140)
@@ -49,13 +51,7 @@ function PadLabels.start()
 
 	-- The server tells the player which plot is theirs.
 	task.spawn(function()
-		local index = player:GetAttribute("PlotIndex")
-		while typeof(index) ~= "number" do
-			player:GetAttributeChangedSignal("PlotIndex"):Wait()
-			index = player:GetAttribute("PlotIndex")
-		end
-		local plots = workspace:WaitForChild("Street"):WaitForChild("Plots")
-		watch(plots:WaitForChild("Plot" .. tostring(index)))
+		watch(OwnPlot.wait())
 	end)
 end
 

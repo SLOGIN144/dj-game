@@ -2,6 +2,8 @@
 -- Client entry point. Starts the HUD and the other client controllers.
 
 local DebugOverlay = require(script.Parent.UI.DebugOverlay)
+local Decks = require(script.Parent.Controllers.Decks)
+local Effects = require(script.Parent.Controllers.Effects)
 local Guests = require(script.Parent.Controllers.Guests)
 local Hud = require(script.Parent.UI.Hud)
 local LightShow = require(script.Parent.Controllers.LightShow)
@@ -15,4 +17,6 @@ PlotMixes.start()
 PlotMusic.start()
 LightShow.start()
 Guests.start()
+Effects.start()
+Decks.start()
 DebugOverlay.start()

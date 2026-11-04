@@ -12,6 +12,9 @@ local Income = require(ReplicatedStorage.Shared.Economy.Income)
 -- A drop boost: its income multiplier until `endsAt` (server time).
 export type Boost = { multiplier: number, endsAt: number }
 
+-- Counters kept for goals and, later, the save file.
+export type Stats = { perfectDrops: number, goodDrops: number, eventsDone: number, playSeconds: number }
+
 export type State = {
 	player: Player,
 	plot: Model,
@@ -24,6 +27,7 @@ export type State = {
 	income: number, -- cash per second with every bonus, what the register fills with
 	boost: Boost?,
 	speakerBlown: boolean,
+	stats: Stats,
 }
 
 local PlayerState = {}
@@ -43,6 +47,7 @@ function PlayerState.create(player: Player, plot: Model): State
 		income = 0,
 		boost = nil,
 		speakerBlown = false,
+		stats = { perfectDrops = 0, goodDrops = 0, eventsDone = 0, playSeconds = 0 },
 	}
 	for _, trackId in Balance.Start.tracks do
 		state.ownedTracks[trackId] = true

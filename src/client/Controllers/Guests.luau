@@ -45,10 +45,22 @@ local SKIN = {
 	Color3.fromRGB(96, 66, 50),
 }
 local PANTS = { Color3.fromRGB(40, 40, 56), Color3.fromRGB(58, 52, 80), Color3.fromRGB(30, 46, 70) }
+-- Hair: mostly natural colours, now and then a dyed party colour.
+local HAIR = {
+	Color3.fromRGB(26, 22, 20),
+	Color3.fromRGB(26, 22, 20),
+	Color3.fromRGB(70, 44, 30),
+	Color3.fromRGB(70, 44, 30),
+	Color3.fromRGB(122, 80, 46),
+	Color3.fromRGB(214, 176, 104),
+	Color3.fromRGB(160, 64, 36),
+	Color3.fromRGB(255, 110, 200),
+	Color3.fromRGB(90, 170, 255),
+}
 
 type Guest = {
 	model: Model,
-	parts: { BasePart }, -- torso, head, left arm, right arm, left leg, right leg
+	parts: { BasePart }, -- torso, head, left arm, right arm, left leg, right leg, hair
 	spot: Vector3, -- where it dances, in plot space
 	arrivedAt: number, -- os.clock() it started walking in
 	offset: number, -- its own beat offset, so the crowd isn't a drill team
@@ -88,6 +100,8 @@ local function newGuest(plot: Model, index: number, spot: Vector3): Guest
 	local shirt = SHIRTS[random:NextInteger(1, #SHIRTS)]
 	local skin = SKIN[random:NextInteger(1, #SKIN)]
 	local pants = PANTS[random:NextInteger(1, #PANTS)]
+	local hair = HAIR[random:NextInteger(1, #HAIR)]
+	local long = random:NextNumber() < 0.4 -- longer hair falls to the neck
 
 	local model = Instance.new("Model")
 	model.Name = string.format("%s_Guest%d", plot.Name, index)
@@ -98,6 +112,7 @@ local function newGuest(plot: Model, index: number, spot: Vector3): Guest
 		part(model, "RightArm", Vector3.new(0.8, 1.8, 0.8), shirt),
 		part(model, "LeftLeg", Vector3.new(0.9, 2, 0.9), pants),
 		part(model, "RightLeg", Vector3.new(0.9, 2, 0.9), pants),
+		part(model, "Hair", if long then Vector3.new(1.35, 1.1, 0.95) else Vector3.new(1.3, 0.45, 1.3), hair),
 	}
 	model.Parent = folder
 	return {
@@ -238,6 +253,9 @@ local function animate(
 			* CFrame.new(0, -0.9, 0)
 		frames[#frames + 1] = legs * CFrame.new(-0.5, 2, 0) * CFrame.Angles(legSwing, 0, 0) * CFrame.new(0, -1, 0)
 		frames[#frames + 1] = legs * CFrame.new(0.5, 2, 0) * CFrame.Angles(-legSwing, 0, 0) * CFrame.new(0, -1, 0)
+		-- Hair sits on the head; long hair hangs a little lower at the back.
+		local hairSize = guest.parts[7].Size
+		frames[#frames + 1] = upper * CFrame.new(0, 5.2 - (hairSize.Y - 0.45) / 2, 0.08 + (hairSize.Y - 0.45) * 0.45)
 		for _, p in guest.parts do
 			parts[#parts + 1] = p
 		end

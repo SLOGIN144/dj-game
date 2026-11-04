@@ -1356,6 +1356,12 @@ local okSession, sessionError = pcall(function()
 			end)
 			else nil
 		check(firstName ~= nil, "the leaderboard lists Filip")
+		local stats = filip:FindFirstChild("leaderstats")
+		local earned = stats and stats:FindFirstChild("Earned")
+		check(
+			earned ~= nil and earned.Value == math.floor(state.totalEarned),
+			"the player list shows what Filip earned"
+		)
 		leave(guest)
 	end
 

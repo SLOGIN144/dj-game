@@ -8,7 +8,9 @@ Ibiza and the jet, star DJs, the VIP and photographer events, the leaderboard an
 Every file is formatted (StyLua), linted (Selene) and type-checked against the Roblox API
 (luau-lsp with the Roblox definitions). The pure modules pass their specs: 147 tests, run outside
 Roblox with Lune. The server's world building ran on Lune's Roblox instances, and renders of
-each room were checked against the concept images. **None of it has run in Roblox yet.** Work
+each room were checked against the concept images. A simulation ran the real server and client
+together through a whole session (`tools/cloud/`, 320 checks); it found and fixed a start-up
+stall. **None of it has run in Roblox yet.** Work
 through this list from the top, read the Output after each part, and fix what breaks before
 Filip's playtest.
 
@@ -57,6 +59,7 @@ Filip's playtest.
 - [ ] The Tracks button at the decks opens the shop. Buying a track takes the cash, shows "New track in your mix!" and adds +5% income.
 - [ ] Blown speaker (F6 until it comes up): smoke, sparks, sputtering rings, quieter music, -25% income, an "!" marker and the HUD banner. Holding E for 2 s fixes it and pays a tip. A second player doesn't see the Fix prompt.
 - [ ] Max says hello on a first join, his 3 goals tick off with a line each, and after the last button he points to Move On.
+- [ ] The gold guide arrow ("Start here") bounces over the free laptop for a new player. After that it points at whatever Max's next goal needs (the register, the speaker's button, the laptop to play), and at Move On once the dorm is done. It hides when you stand at the spot.
 
 ## 5. Moving on
 
@@ -80,6 +83,7 @@ Filip's playtest.
 - [ ] Before Ibiza, the gate at the end of the street shows a red light and its prompt says "Locked". Trying it gets a line from your host.
 - [ ] F4 in the club, then Move On: "Flying to Ibiza Beach Club...", and you land on the venue's path facing the entrance arch. The sky turns to a sunset.
 - [ ] The venue: the plaza, pools, palms, cabanas, juice bar, the stage by the sea and the LED wall. The register, buttons and spawn are here. The Beach Stage pad is free.
+- [ ] The sea is terrain water right behind the stage: turquoise, moving, catching the sunset. If it looks wrong, tune `World/WaterLook.luau`. Walking into it, you swim.
 - [ ] Back on the street (the jet at the venue: "Fly to the city"), your plot shows the finished club, and it still lights up to your mix. The gate's light is green: "Fly to Ibiza".
 - [ ] Fireworks (Ibiza): rockets go up from the beach on every drop and burst in colour.
 - [ ] Rejoin while at Ibiza: you spawn at the venue.

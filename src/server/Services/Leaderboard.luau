@@ -1,7 +1,8 @@
 --!strict
 -- The board on the street (GDD: multiplayer and social): it ranks the players in this server by
 -- total cash earned, with the location each one has reached. It draws on the billboard's screen
--- at the near end of the street (World/StreetProps). A global leaderboard comes later.
+-- at the near end of the street (World/StreetProps). The same number shows in Roblox's player list
+-- ("leaderstats"). A global leaderboard comes later.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,6 +18,25 @@ local TITLE = Color3.fromRGB(60, 160, 255)
 local GOLD = Color3.fromRGB(255, 214, 90)
 local TEXT = Color3.fromRGB(240, 240, 250)
 local MUTED = Color3.fromRGB(170, 170, 190)
+
+-- The player's "Earned" value in Roblox's player list.
+local function earnedStat(player: Player): IntValue
+	local folder = player:FindFirstChild("leaderstats")
+	if not folder then
+		local created = Instance.new("Folder")
+		created.Name = "leaderstats" -- the name Roblox's player list looks for
+		created.Parent = player
+		folder = created
+	end
+	local existing = (folder :: Instance):FindFirstChild("Earned")
+	if existing and existing:IsA("IntValue") then
+		return existing
+	end
+	local value = Instance.new("IntValue")
+	value.Name = "Earned"
+	value.Parent = folder
+	return value
+end
 
 local function label(parent: Instance, text: string, size: UDim2, position: UDim2, colour: Color3): TextLabel
 	local item = Instance.new("TextLabel")
@@ -66,6 +86,7 @@ function Leaderboard.start(screen: BasePart?)
 			local ranked = {}
 			for _, state in PlayerState.all() do
 				table.insert(ranked, state)
+				earnedStat(state.player).Value = math.floor(state.totalEarned)
 			end
 			table.sort(ranked, function(a, b)
 				return a.totalEarned > b.totalEarned

@@ -12,6 +12,8 @@ local RunService = game:GetService("RunService")
 local Blockouts = require(ReplicatedStorage.Shared.Config.Blockouts)
 local PlotArea = require(ReplicatedStorage.Shared.Util.PlotArea)
 local PlotMixes = require(script.Parent.PlotMixes)
+local PlotMusic = require(script.Parent.PlotMusic)
+local Sfx = require(script.Parent.Sfx)
 local TrackInfo = require(ReplicatedStorage.Shared.Music.TrackInfo)
 local Types = require(ReplicatedStorage.Shared.Types)
 
@@ -49,7 +51,7 @@ type Guest = {
 	style: number, -- 1 or 2: two slightly different arm moves
 }
 
-type PlotGuests = { guests: { Guest }, jumpAt: number }
+type PlotGuests = { guests: { Guest }, jumpAt: number, settled: boolean }
 
 local plots: { [Model]: PlotGuests } = {}
 local folder: Folder
@@ -107,10 +109,18 @@ local function fit(plot: Model, entry: PlotGuests, blockout: Types.Blockout?)
 		guest.model:Destroy()
 	end
 	if blockout then
+		local arrived = #entry.guests < count
 		while #entry.guests < count do
 			local index = #entry.guests + 1
 			table.insert(entry.guests, newGuest(plot, index, blockout.guests.spots[index]))
 		end
+		-- A knock at the door when a friend arrives where you are (not for the crowd already there).
+		if arrived and entry.settled and PlotMusic.listening() == plot then
+			Sfx.play("knock")
+		end
+		entry.settled = true
+	else
+		entry.settled = false
 	end
 end
 
@@ -228,7 +238,7 @@ function Guests.start()
 	folder.Parent = workspace
 
 	for _, plot in PlotMixes.plots() do
-		plots[plot] = { guests = {}, jumpAt = -math.huge }
+		plots[plot] = { guests = {}, jumpAt = -math.huge, settled = false }
 	end
 
 	RunService.RenderStepped:Connect(function()

@@ -10,6 +10,8 @@ local TweenService = game:GetService("TweenService")
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local GoalsConfig = require(ReplicatedStorage.Shared.Config.Goals)
 local OwnPlot = require(script.Parent.Parent.Controllers.OwnPlot)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Sfx = require(script.Parent.Parent.Controllers.Sfx)
 local Style = require(script.Parent.Style)
 
 local GoalTracker = {}
@@ -126,6 +128,9 @@ function GoalTracker.start()
 		end
 	end
 	player:GetAttributeChangedSignal("GoalsDone"):Connect(update)
+	Remotes.event("GoalDone").OnClientEvent:Connect(function()
+		Sfx.play("goal")
+	end)
 	update()
 end
 

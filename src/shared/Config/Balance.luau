@@ -93,6 +93,14 @@ Balance.Events = {
 	},
 }
 
+-- Saving (Services/PlayerData).
+Balance.Save = {
+	autosaveSeconds = 60,
+	staleSeconds = 300, -- another server's claim older than this is taken over (that server died)
+	lockRetries = 6, -- tries to claim a club another server still holds (it may be saving right now)
+	lockRetrySeconds = 3,
+}
+
 Balance.Register = {
 	capMinutes = 10, -- the register stops filling at this many minutes of income
 }

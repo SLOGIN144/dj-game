@@ -11,6 +11,7 @@ local TweenService = game:GetService("TweenService")
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local OwnPlot = require(script.Parent.Parent.Controllers.OwnPlot)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Sfx = require(script.Parent.Parent.Controllers.Sfx)
 local Style = require(script.Parent.Style)
 
 local Hud = {}
@@ -105,6 +106,7 @@ function Hud.start()
 	Remotes.event("EventNotice").OnClientEvent:Connect(function(kind: unknown, active: unknown)
 		if kind == "speaker" then
 			notice.Visible = active == true
+			Sfx.play(if active == true then "speakerBlow" else "fix")
 		end
 	end)
 
@@ -112,6 +114,7 @@ function Hud.start()
 	Remotes.event("Collected").OnClientEvent:Connect(function(amount: unknown)
 		if typeof(amount) == "number" then
 			Hud.float("+" .. Format.money(amount), Style.GOOD)
+			Sfx.play("cash")
 		end
 	end)
 

@@ -37,7 +37,7 @@ local function collect(state: PlayerState.State, collected: RemoteEvent)
 	end
 	lastCollect[state.player] = now
 	state.register -= amount
-	PlayerState.setCash(state, state.cash + amount)
+	PlayerState.earn(state, amount)
 	showRegister(state)
 	collected:FireClient(state.player, amount)
 	Economy.collected:fire(state, amount)
@@ -49,7 +49,7 @@ function Economy.reward(state: PlayerState.State, amount: number)
 	if whole <= 0 then
 		return
 	end
-	PlayerState.setCash(state, state.cash + whole)
+	PlayerState.earn(state, whole)
 	Remotes.event("Collected"):FireClient(state.player, whole)
 end
 
@@ -76,6 +76,7 @@ function Economy.start(plots: { Model })
 			sinceLabel = 0
 		end
 		for _, state in PlayerState.all() do
+			state.stats.playSeconds += dt
 			state.register = Register.fill(state.register, state.income, dt)
 			if updateLabels then
 				showRegister(state)

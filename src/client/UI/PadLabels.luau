@@ -5,6 +5,7 @@
 local Players = game:GetService("Players")
 
 local OwnPlot = require(script.Parent.Parent.Controllers.OwnPlot)
+local Sfx = require(script.Parent.Parent.Controllers.Sfx)
 
 local PadLabels = {}
 
@@ -37,6 +38,13 @@ function PadLabels.start()
 	end
 
 	local function watch(plot: Instance)
+		-- A pop when something new appears on the plot (not for what was rebuilt on joining).
+		local joinedAt = os.clock()
+		plot:WaitForChild("Items").ChildAdded:Connect(function()
+			if os.clock() - joinedAt > 3 then
+				Sfx.play("buildPop")
+			end
+		end)
 		local folder = plot:WaitForChild("Pads")
 		pads = folder
 		folder.ChildAdded:Connect(function(pad)

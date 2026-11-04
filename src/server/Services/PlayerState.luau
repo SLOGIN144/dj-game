@@ -5,9 +5,10 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Balance = require(ReplicatedStorage.Shared.Config.Balance)
 local Crowd = require(ReplicatedStorage.Shared.Economy.Crowd)
 local Income = require(ReplicatedStorage.Shared.Economy.Income)
+local Balance = require(ReplicatedStorage.Shared.Config.Balance)
+local SaveSchema = require(ReplicatedStorage.Shared.Data.SaveSchema)
 
 -- A drop boost: its income multiplier until `endsAt` (server time).
 export type Boost = { multiplier: number, endsAt: number }
@@ -19,6 +20,7 @@ export type State = {
 	player: Player,
 	plot: Model,
 	cash: number,
+	totalEarned: number, -- every bit of cash ever earned (for the leaderboard later)
 	locationId: string,
 	bought: { [string]: boolean }, -- item ids bought at the current location
 	ownedTracks: { [string]: boolean }, -- track ids in the plot's mix
@@ -35,30 +37,59 @@ local PlayerState = {}
 
 local states: { [Player]: State } = {}
 
-function PlayerState.create(player: Player, plot: Model): State
+-- The player's state on their plot, from their save (Data/SaveSchema; a new player's is the default).
+function PlayerState.create(player: Player, plot: Model, saved: SaveSchema.SaveData): State
+	local function set(ids: { string }): { [string]: boolean }
+		local result = {}
+		for _, id in ids do
+			result[id] = true
+		end
+		return result
+	end
 	local state: State = {
 		player = player,
 		plot = plot,
-		cash = Balance.Start.cash,
-		locationId = Balance.Start.locationId,
-		bought = {},
-		ownedTracks = {},
-		register = 0,
+		cash = saved.cash,
+		totalEarned = saved.totalEarned,
+		locationId = saved.location,
+		bought = set(saved.boughtItems),
+		ownedTracks = set(saved.ownedTracks),
+		register = saved.register,
 		baseIncome = 0,
 		income = 0,
 		boost = nil,
 		speakerBlown = false,
-		goalsDone = {},
-		stats = { perfectDrops = 0, goodDrops = 0, eventsDone = 0, playSeconds = 0 },
+		goalsDone = set(saved.goalsDone),
+		stats = table.clone(saved.stats),
 	}
-	for _, trackId in Balance.Start.tracks do
-		state.ownedTracks[trackId] = true
-	end
 	states[player] = state
 	PlayerState.setCash(state, state.cash)
 	PlayerState.updateIncome(state)
 	PlayerState.mirror(state)
 	return state
+end
+
+-- The state as a save file (Data/SaveSchema).
+function PlayerState.snapshot(state: State): SaveSchema.SaveData
+	local function list(set: { [string]: boolean }): { string }
+		local ids = {}
+		for id in set do
+			table.insert(ids, id)
+		end
+		table.sort(ids)
+		return ids
+	end
+	return {
+		version = SaveSchema.VERSION,
+		cash = state.cash,
+		totalEarned = state.totalEarned,
+		location = state.locationId,
+		boughtItems = list(state.bought),
+		ownedTracks = list(state.ownedTracks),
+		goalsDone = list(state.goalsDone),
+		register = state.register,
+		stats = table.clone(state.stats),
+	}
 end
 
 function PlayerState.get(player: Player): State?
@@ -77,6 +108,12 @@ end
 function PlayerState.setCash(state: State, value: number)
 	state.cash = value
 	state.player:SetAttribute("Cash", value)
+end
+
+-- Adds earned cash (collected, goal rewards, tips), which also counts towards totalEarned.
+function PlayerState.earn(state: State, amount: number)
+	state.totalEarned += amount
+	PlayerState.setCash(state, state.cash + amount)
 end
 
 function PlayerState.setIncome(state: State, value: number)

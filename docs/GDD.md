@@ -57,10 +57,12 @@ Around it, every few minutes: a club event, a goal from the location's character
 
 ### Plots
 
-- A server has 6 plots along a night-time city street, and at most 6 players.
-- On join, the player gets a free plot and spawns at it. When they leave, the plot is cleared.
-- Each plot shows the owner's current location: a dorm room, a house, a club or an Ibiza beach club. Ibiza stands on its plot too (sand, palms, a strip of sea behind it), as tycoons do.
-- Other players can walk into any club and hear its music.
+- The street is the hub: a night-time city street with tall buildings and 6 plots, 3 on each side of the road. A server has at most 6 players.
+- On join, the player gets a free plot and spawns on the street at its building. When they leave, the plot is cleared.
+- **Each plot is one building, and it grows with the career:** a small, worn student dorm, then an apartment block, then a tall tower with a neon sign and stairs down to an underground club. Anyone on the street can see how far a player has come.
+- **Small locations are interiors** behind the building's door: the dorm room, the apartment and the underground club.
+- **Big locations leave the street.** At the far end, the street stops at a closed gate with a small airstrip and a white private jet behind it, in sight from the start as the big goal. When Ibiza is unlocked, the jet takes the player to a large open-air venue with a plaza and pools.
+- Other players can walk into any building and hear its music.
 
 ### Buttons
 
@@ -88,7 +90,7 @@ Around it, every few minutes: a club event, a goal from the location's character
 
 - About 10 hours from the dorm to a finished Ibiza.
 - **Many more locations later.** Filip wants far more than these four (between them and after Ibiza). The four are the spine for the prototype and launch planning; the full list is an open question, and every system must take a new location as one more `Locations.luau` entry with its items.
-- When every button is bought, a **Move on** button appears. The plot turns into the next location and building starts again with pricier parts that pay more. Cash, tracks, star DJs and goals carry over.
+- When every button is bought, a **Move on** button appears. The building grows to its next stage, the next location opens behind its door (or the jet unlocks, for Ibiza), and building starts again with pricier parts that pay more. Cash, tracks, star DJs and goals carry over.
 - **Rebirth (world tour):** after Ibiza, in a later update.
 - Launch ships all four locations; Milestone 1 builds the first two.
 
@@ -108,7 +110,7 @@ The DJ booth is part of every location (the laptop on the dorm desk, later real 
 
 - Each plot plays a nonstop mix of the owner's tracks, mixed on the beat by the game: the next track starts 8 bars before its drop, blends over 8 bars, and the drop lands on the beat (the same rules the set prototype proved, run automatically).
 - The **server** plans each plot's mix from the tagged track data: which track, when it starts and when it hands over, against `workspace:GetServerTimeNow()`. A pure `MixPlanner` module does the planning, so it's deterministic and tested.
-- Each **client** plays the mix of the plot the player is on (fading by distance near the street), so everyone in a club hears the same thing at the same moment, and lights and guests move on its beat.
+- Each **client** plays the mix of the location the player is in, so everyone in a club hears the same thing at the same moment, and lights and guests move on its beat.
 - Tracks are only mixed with tracks within ±8% tempo; otherwise the next one starts after a short fade.
 - About one drop every 1–2 minutes.
 
@@ -207,20 +209,22 @@ Each location is a hand-tuned space defined in `Config/Locations.luau`: id, name
 | Location | Look | FX unlocked by buttons |
 | --- | --- | --- |
 | Dorm room | desk, laptop, bed, LED strip, posters, night window | none |
-| House party | living room, sofa pushed aside, string lights, your own speaker | confetti popper |
-| Club | small dark club, booth on a riser, a real rig, haze | moving heads, CO2 jets on drops |
-| Ibiza beach club | open-air deck by the sea, palms, big LED wall | fireworks, full light show |
+| House party | apartment living room, sofa pushed aside, string lights, your own speaker, a balcony over the city | confetti popper |
+| Club | small underground club in a basement, concrete and brick, booth on a riser, a real rig, haze | moving heads, CO2 jets on drops |
+| Ibiza beach club | open-air venue by the sea: arrival airstrip, plaza with palms, pools, dance deck, stage with a big LED wall | fireworks, full light show |
 
 ### Guests
 
-- The number of guests follows the plot's income, within the location's range. Guests walk in from the street and dance on the floor.
+- The number of guests follows the plot's income, within the location's range. Guests walk in through the location's entrance and dance on the floor.
 - Guests are client-side visuals built from replicated plot state, so every player sees them in every club.
 - **Rendering:** front rows are full R15 rigs with varied dance animations, random start offsets and ±10% speed; further back, simpler figures moved by one shared bob script. Budget about 40 full rigs on PC and 15 on mobile across all plots in view, scaled by graphics quality.
 - **Reactions:** dancing on the beat, hands up on drops, a cheer burst on a Perfect drop, bigger moves during a boost or a star DJ set.
 
 ## Visual style and lighting
 
-Stylized geometry, realistic lighting. Shapes stay clean and simple; immersion comes from light, haze, colour and motion.
+Stylized geometry, realistic lighting. Shapes stay clean and simple; immersion comes from light, haze, colour and motion. The final look uses smooth, well-modelled 3D assets with rounded edges, not plain cubes; simple parts are only for blockouts.
+
+Concept images (the city, then each location, as an isometric series in one shared style) are references for layout, colour and mood, not for exact measurements.
 
 ### Rules from Filip's reference photos
 
@@ -233,7 +237,7 @@ Stylized geometry, realistic lighting. Shapes stay clean and simple; immersion c
 
 Verify each property in the docs before use.
 
-- **Lighting:** Future lighting technology, Atmosphere for haze, Bloom and ColorCorrection. A night street.
+- **Lighting:** Future lighting technology, Atmosphere for haze, Bloom and ColorCorrection. A night street, and a sunset at Ibiza; the client switches the look when the player changes space.
 - **Beams:** Beam objects with gradient textures from moving-head fixtures, plus a few SpotLights for real light on the crowd.
 - **Particles:** ParticleEmitters for CO2 jets, confetti, sparks and haze puffs.
 - **Light show:** driven by the plot's beat clock and the playing track's section: idle, build, drop (full blast, colour flip, FX), breakdown. Lights a player hasn't bought yet stay off.
@@ -496,13 +500,19 @@ Launch happens only when the core loop is polished and has no known bugs; big co
 - [ ] Genre list beyond house and tech house, after checking the Creator Store.
 - [ ] What Roblox allows for sponsor banners.
 - [ ] More art references: a colour palette per location.
+- [ ] Milestone 1 and the new street: rebuild now or later? Proposed default: build the growing buildings and the dorm and apartment as interiors now, because only the dorm exists so far as an open-front room. The jet and the airstrip wait for Ibiza (Milestone 2).
+- [ ] How doors work. Proposed default: an interior is a separate space away from the street, reached with a short fade, so it can be any size.
+- [ ] What the street sounds like. Proposed default: a quiet, muffled mix from the nearest building, with the full mix only inside.
+- [ ] Visiting a friend's Ibiza before unlocking your own. Proposed default: the jet stays locked until you unlock Ibiza yourself.
+- [ ] Building stages for locations beyond the first four.
 
 ## Glossary
 
 | Term | Meaning in this game |
 | --- | --- |
-| Plot | the piece of the street a player builds on |
-| Location | one stage of the career on a plot: dorm room, house party, club, Ibiza |
+| Plot | a player's place on the street: one building that grows with the career |
+| Location | one stage of the career: dorm room, house party, club, Ibiza |
+| Jet | the plane at the end of the street that takes players to big locations |
 | Button | a pad on the floor that buys the next part of the club |
 | Register | where income piles up until the player collects it |
 | Boost | a short income multiplier from a drop or a star DJ |

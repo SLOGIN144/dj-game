@@ -13,6 +13,7 @@ export type State = {
 	cash: number,
 	locationId: string,
 	bought: { [string]: boolean }, -- item ids bought at the current location
+	ownedTracks: { [string]: boolean }, -- track ids in the plot's mix
 	register: number, -- cash waiting in the plot's register
 	income: number, -- cash per second
 }
@@ -28,9 +29,13 @@ function PlayerState.create(player: Player, plot: Model): State
 		cash = Balance.Start.cash,
 		locationId = Balance.Start.locationId,
 		bought = {},
+		ownedTracks = {},
 		register = 0,
 		income = 0,
 	}
+	for _, trackId in Balance.Start.tracks do
+		state.ownedTracks[trackId] = true
+	end
 	states[player] = state
 	PlayerState.setCash(state, state.cash)
 	PlayerState.setIncome(state, state.income)

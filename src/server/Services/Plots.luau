@@ -44,11 +44,12 @@ local function assign(player: Player, onAssigned: (PlayerState.State) -> ())
 	end
 end
 
-local function release(player: Player)
+local function release(player: Player, onReleased: (PlayerState.State) -> ())
 	local state = PlayerState.get(player)
 	if not state then
 		return
 	end
+	onReleased(state)
 	PlotView.clear(state.plot)
 	PlotView.setOwner(state.plot, nil)
 	PlayerState.remove(player)
@@ -63,12 +64,15 @@ function Plots.build(): { Model }
 	return plots
 end
 
--- Starts handing out plots; `onAssigned` runs once a player owns a plot.
-function Plots.start(onAssigned: (PlayerState.State) -> ())
+-- Starts handing out plots; `onAssigned` runs once a player owns a plot, `onReleased` just before
+-- their plot is cleared.
+function Plots.start(onAssigned: (PlayerState.State) -> (), onReleased: (PlayerState.State) -> ())
 	Players.PlayerAdded:Connect(function(player)
 		assign(player, onAssigned)
 	end)
-	Players.PlayerRemoving:Connect(release)
+	Players.PlayerRemoving:Connect(function(player)
+		release(player, onReleased)
+	end)
 	for _, player in Players:GetPlayers() do
 		if not PlayerState.get(player) then
 			assign(player, onAssigned)

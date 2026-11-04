@@ -1,8 +1,8 @@
 --!strict
 -- Two decks and a master bus on the Audio API, following the GDD signal chain:
---   AudioPlayer -> AudioEqualizer -> AudioFilter -> AudioFader (channel) -> AudioFader (xfade) --+
---   AudioFader (master) <-------------------------------------------------------------------------+
---   -> AudioCompressor (limiter) -> AudioDeviceOutput
+--   AudioPlayer -> AudioEqualizer -> AudioFilter -> AudioFader (channel) -> AudioFader (mix gain) --+
+--   AudioFader (master) <----------------------------------------------------------------------------+
+--   -> AudioFilter (muffle) -> AudioCompressor (limiter) -> AudioDeviceOutput
 -- Music code only talks to this module, never to audio instances directly.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +16,7 @@ AudioEngine.__index = AudioEngine
 local KILL_DB = -40 -- an EQ band at this gain is effectively off
 local FILTER_LOWEST = 20 -- Hz; the high-pass filter's frequency with no sweep
 local FILTER_HIGHEST = 1500 -- Hz; at a full sweep
+local MUFFLE_OPEN = 20000 -- Hz; the master low-pass with no muffle
 
 type Deck = {
 	player: AudioPlayer,
@@ -26,7 +27,7 @@ type Deck = {
 }
 
 export type AudioEngine = typeof(setmetatable(
-	{} :: { _folder: Folder, _decks: { Deck }, _master: AudioFader },
+	{} :: { _folder: Folder, _decks: { Deck }, _master: AudioFader, _muffle: AudioFilter },
 	AudioEngine
 ))
 
@@ -49,13 +50,18 @@ function AudioEngine.new(parent: Instance): AudioEngine
 	folder.Name = "AudioEngine"
 
 	local master = create("AudioFader", "Master", folder) :: AudioFader
+	local muffle = create("AudioFilter", "Muffle", folder) :: AudioFilter
+	muffle.FilterType = Enum.AudioFilterType.Lowpass12dB
+	muffle.Frequency = MUFFLE_OPEN
+	muffle.Bypass = true
 	local limiter = create("AudioCompressor", "Limiter", folder) :: AudioCompressor
 	limiter.Threshold = -3
 	limiter.Ratio = 20
 	limiter.Attack = 0.003
 	limiter.Release = 0.1
 	local output = create("AudioDeviceOutput", "Output", folder) :: AudioDeviceOutput
-	wire(folder, master, limiter)
+	wire(folder, master, muffle)
+	wire(folder, muffle, limiter)
 	wire(folder, limiter, output)
 
 	local decks: { Deck } = {}
@@ -80,8 +86,9 @@ function AudioEngine.new(parent: Instance): AudioEngine
 	end
 
 	folder.Parent = parent
-	local engine = setmetatable({ _folder = folder, _decks = decks, _master = master }, AudioEngine)
-	engine:setCrossfader(0)
+	local engine = setmetatable({ _folder = folder, _decks = decks, _master = master, _muffle = muffle }, AudioEngine)
+	engine:setDeckGain(1, 0)
+	engine:setDeckGain(2, 0)
 	return engine
 end
 
@@ -162,6 +169,11 @@ function AudioEngine.setCrossfader(self: AudioEngine, position: number)
 	self._decks[2].crossfade.Volume = gainB
 end
 
+-- A deck's share of the mix, 0..1 (the mix planner already makes it equal-power).
+function AudioEngine.setDeckGain(self: AudioEngine, deck: number, gain: number)
+	self._decks[deck].crossfade.Volume = math.clamp(gain, 0, 1)
+end
+
 -- Low EQ band: 1 = full bass, 0 = bass killed.
 function AudioEngine.setBass(self: AudioEngine, deck: number, amount: number)
 	self._decks[deck].equalizer.LowGain = (1 - math.clamp(amount, 0, 1)) * KILL_DB
@@ -177,6 +189,13 @@ end
 
 function AudioEngine.setMasterVolume(self: AudioEngine, volume: number)
 	self._master.Volume = math.clamp(volume, 0, 1)
+end
+
+-- Low-passes the whole mix, as if heard through a wall: 0 = clear, 1 = cut down to `lowest` Hz.
+function AudioEngine.setMuffle(self: AudioEngine, amount: number, lowest: number)
+	local muffle = math.clamp(amount, 0, 1)
+	self._muffle.Bypass = muffle <= 0.001
+	self._muffle.Frequency = MUFFLE_OPEN * (lowest / MUFFLE_OPEN) ^ muffle
 end
 
 function AudioEngine.destroy(self: AudioEngine)

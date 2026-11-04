@@ -35,6 +35,21 @@ Balance.Mix = {
 	recentTracks = 2, -- a track doesn't come back while it's among the last this many played, if there's a choice
 }
 
+-- How a plot's mix sounds on each client, and how tightly the decks follow the plan.
+Balance.Music = {
+	streetVolume = 0.35, -- a plot's mix heard from the street, before it fades with distance
+	hearDistance = 60, -- studs from a plot's edge where its mix has faded out completely
+	muffleHz = 700, -- the low-pass on a mix heard from outside its plot
+	switchMargin = 4, -- studs another plot must be closer by before the music switches to it
+	seekThreshold = 0.25, -- seconds: a deck this far off the plan jumps back into place
+	correctionSeconds = 2, -- a smaller drift is pulled back by nudging the speed over this long
+	maxNudge = 0.01, -- the most a nudge changes a deck's speed
+	scheduleLead = 0.5, -- seconds before a planned start that a deck is scheduled on the mixer clock
+	loadTimeout = 10, -- seconds a track gets to load before the deck tries again later
+	retrySeconds = 5,
+	blownVolume = 0.5, -- music volume while the plot's speaker is blown
+}
+
 Balance.Start = {
 	cash = 50, -- enough for the first paid button right away
 	locationId = "dorm",

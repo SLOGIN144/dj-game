@@ -70,7 +70,9 @@ local function fadeAway(panel: Frame)
 		end
 	end
 	task.delay(1, function()
-		panel.Visible = false
+		if panel.Parent then -- not rebuilt for the next location meanwhile
+			panel.Visible = false
+		end
 	end)
 end
 

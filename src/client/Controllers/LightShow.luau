@@ -222,6 +222,10 @@ local function drive(plot: Model, entry: PlotLights, now: number)
 	local showcaseColour = wash(palette(if locationId then PlotSpace.showcaseFor(locationId) else nil))
 
 	for _, item in entry.parts do
+		if item.part.Parent == nil then
+			entry.dirty = true -- gone (moved on, or streamed out): rescan next frame
+			continue
+		end
 		local amount, tint = 1, if item.showcase then showcaseColour else colour
 		local role = item.role
 		if role == "led" then

@@ -1122,6 +1122,11 @@ local okSession, sessionError = pcall(function()
 			local bookButton = kikoRow and kikoRow:FindFirstChild("Book")
 			if check(bookButton ~= nil, "the board lists Kiko with a Book button") then
 				bookButton.Activated:Fire()
+				local last = toServer[#toServer]
+				check(
+					last ~= nil and last.remote == "BookDj" and last.args[1] == "dj_kiko",
+					"the Book button asks the server for Kiko"
+				)
 			end
 			advance(0.2)
 			check(state.starDj ~= nil and state.starDj.djId == "dj_kiko", "Kiko is booked")

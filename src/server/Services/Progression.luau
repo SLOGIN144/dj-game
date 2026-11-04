@@ -53,7 +53,7 @@ function Progression.moveOn(state: PlayerState.State)
 		Progression.moved:fire(state, fromId)
 		task.spawn(PlayerData.save, player.UserId, PlayerState.snapshot(state), false)
 		return Travel.spawnFrame(state.plot)
-	end)
+	end, if location.space == "venue" then "jet" else "moveOn")
 	moving[player] = nil
 end
 

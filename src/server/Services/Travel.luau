@@ -49,16 +49,16 @@ function Travel.place(player: Player, target: CFrame)
 	end
 end
 
--- Fades the player's screen to `text`, runs `prepare` while it's dark (it returns where the
--- character goes, or nil to stay put), moves the character there and fades back in. Yields.
--- Returns false if the player is already on their way somewhere.
-function Travel.move(player: Player, text: string, prepare: () -> CFrame?): boolean
+-- Fades the player's screen to `text` with an optional `sound` (Config/Sounds), runs `prepare`
+-- while it's dark (it returns where the character goes, or nil to stay put), moves the character
+-- there and fades back in. Yields. Returns false if the player is already on their way somewhere.
+function Travel.move(player: Player, text: string, prepare: () -> CFrame?, sound: string?): boolean
 	if busy[player] then
 		return false
 	end
 	busy[player] = true
 	local remote = Remotes.event("Travel")
-	remote:FireClient(player, "out", text)
+	remote:FireClient(player, "out", text, sound)
 	task.wait(FADE_SECONDS)
 	local ok, target = pcall(prepare)
 	if not ok then
@@ -90,11 +90,11 @@ local function onPrompt(prompt: ProximityPrompt, player: Player)
 		local name = if location then location.name else "the venue"
 		task.spawn(Travel.move, player, "Flying to " .. name .. "...", function()
 			return Travel.spawnFrame(state.plot)
-		end)
+		end, "jet")
 	elseif where == "street" and prompt:GetAttribute("OwnerUserId") == player.UserId then
 		task.spawn(Travel.move, player, "Flying back to the city...", function()
 			return Travel.streetFrame(state.plot)
-		end)
+		end, "jet")
 	end
 end
 

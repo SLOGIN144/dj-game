@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Sfx = require(script.Parent.Parent.Controllers.Sfx)
 local Style = require(script.Parent.Style)
 
 local Fade = {}
@@ -43,11 +44,14 @@ function Fade.start()
 		TweenService:Create(line, BACK, { TextTransparency = 1 }):Play()
 	end
 
-	Remotes.event("Travel").OnClientEvent:Connect(function(phase: unknown, text: unknown)
+	Remotes.event("Travel").OnClientEvent:Connect(function(phase: unknown, text: unknown, sound: unknown)
 		token += 1
 		local mine = token
 		if phase == "out" then
 			line.Text = if typeof(text) == "string" then text else ""
+			if typeof(sound) == "string" then
+				Sfx.play(sound)
+			end
 			TweenService:Create(cover, OUT, { BackgroundTransparency = 0 }):Play()
 			TweenService:Create(line, OUT, { TextTransparency = 0 }):Play()
 			task.delay(FAILSAFE, function()

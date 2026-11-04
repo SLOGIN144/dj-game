@@ -133,8 +133,9 @@ local function co2(part: BasePart)
 	end)
 end
 
--- A firework: a glowing rocket rises, then bursts into sparks with a flash of light.
-local function firework(part: BasePart, colour: Color3)
+-- A firework: a glowing rocket rises, then bursts into sparks with a flash of light (and a bang,
+-- when `audible`).
+local function firework(part: BasePart, colour: Color3, audible: boolean)
 	local start = part.CFrame * CFrame.new(0, part.Size.Y / 2, 0)
 	local rocket = holder("Rocket", start, Vector3.new(0.4, 0.4, 0.4), 4)
 	rocket.Transparency = 0
@@ -169,6 +170,9 @@ local function firework(part: BasePart, colour: Color3)
 		sparks.Drag = 1.5
 		sparks.Parent = rocket
 		sparks:Emit(if Preferences.lowGraphics() then math.ceil(90 * LOW_SHARE) else 90)
+		if audible then
+			Sfx.play("firework", 0.6)
+		end
 		local flash = Instance.new("PointLight")
 		flash.Color = colour
 		flash.Range = 60
@@ -178,8 +182,17 @@ local function firework(part: BasePart, colour: Color3)
 	end)
 end
 
--- Fires every feature payoff the plot has bought (and its street showcase), for one drop.
+-- Fires every feature payoff the plot has bought (and its street showcase), for one drop. Their
+-- sounds only play for the club whose music you hear.
 local function dropPayoffs(plot: Model)
+	local here = PlotMusic.listening() == plot
+	local played: { [string]: boolean } = {}
+	local function sound(name: string)
+		if here and not played[name] then
+			played[name] = true
+			Sfx.play(name)
+		end
+	end
 	local colours = table.clone(palette(plot))
 	table.insert(colours, WHITE)
 	local rockets = 0
@@ -197,10 +210,11 @@ local function dropPayoffs(plot: Model)
 				popper(part, colours)
 			elseif fx == "co2" then
 				co2(part)
+				sound("co2")
 			elseif fx == "fireworks" then
 				rockets += 1
 				local colour = colours[rockets % #colours + 1]
-				task.delay(rockets * 0.15, firework, part, colour)
+				task.delay(rockets * 0.15, firework, part, colour, here)
 			end
 		end
 	end

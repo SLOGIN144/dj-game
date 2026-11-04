@@ -164,7 +164,9 @@ roblox.implementMethod("RemoteEvent", "FireAllClients", function(self, ...)
 		signalOf(self, "OnClientEvent"):Fire(...)
 	end
 end)
+local toServer = {}
 roblox.implementMethod("RemoteEvent", "FireServer", function(self, ...)
+	table.insert(toServer, { remote = self.Name, args = table.pack(...) })
 	signalOf(self, "OnServerEvent"):Fire(localPlayer, ...)
 end)
 local function sentSince(index, remote)
@@ -312,7 +314,21 @@ roblox.implementMethod("Workspace", "GetServerTimeNow", function()
 	return serverNow()
 end)
 roblox.implementMethod("Model", "GetPivot", function(self)
-	return self.WorldPivot
+	local ok, pivot = pcall(function()
+		return self.WorldPivot
+	end)
+	if ok then
+		return pivot
+	end
+	-- Roblox's default: the centre of the model's parts.
+	local sum, count = Vector3.zero, 0
+	for _, d in self:GetDescendants() do
+		if d:IsA("BasePart") then
+			sum += d.CFrame.Position
+			count += 1
+		end
+	end
+	return CFrame.new(if count > 0 then sum / count else Vector3.zero)
 end)
 roblox.implementMethod("Model", "PivotTo", function(self, target)
 	local delta = target * self.WorldPivot:Inverse()
@@ -791,6 +807,8 @@ local function newCharacter(player)
 	place(rootPart, CFrame.new(0, 3, 0))
 	rootPart.Parent = model
 	local humanoid = Instance.new("Humanoid")
+	humanoid.MaxHealth = 100
+	humanoid.Health = 100
 	humanoid.Parent = model
 	model.PrimaryPart = rootPart
 	model.WorldPivot = rootPart.CFrame
@@ -931,6 +949,7 @@ local okSession, sessionError = pcall(function()
 			local mark = #sent
 			local press = game:GetService("ReplicatedStorage") -- the remotes folder is a real instance
 			local remotes = dataModel:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+
 			check(remotes ~= nil, "the server made its remotes")
 			if remotes then
 				remotes.DropPress.OnServerEvent:Fire(filip, drop.time + 0.01)
@@ -946,6 +965,79 @@ local okSession, sessionError = pcall(function()
 	end
 
 	local remotes = dataModel:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+
+	print("== the decks, the track shop and the board on the client")
+	do
+		local blockout = Blockouts.dorm
+		local stand = PlotSpace.origin(plot) * CFrame.new(blockout.decks.stand + Vector3.new(0, 3, 0))
+		filipBody:PivotTo(stand)
+		local prompt = findDescendant(plot.Items, function(d)
+			return d.Name == "DecksPrompt"
+		end)
+		if check(prompt ~= nil, "the decks have the client's Play prompt") then
+			prompt.Triggered:Fire(filip)
+			advance(0.3)
+			check(
+				clientCamera.CameraType == roblox.Enum.CameraType.Scriptable,
+				"Play moves the camera to the decks shot"
+			)
+			local decksGui = gui("Decks")
+			check(decksGui ~= nil and decksGui.Enabled, "the decks UI shows")
+			local nextDrop = nil
+			for _, drop in Music.drops(plot) do
+				if drop.time > serverNow() + 0.5 then
+					nextDrop = drop
+					break
+				end
+			end
+			if nextDrop and decksGui then
+				advance(nextDrop.time - serverNow(), 0.25)
+				local mark = #sent
+				local main = findDescendant(decksGui, function(d)
+					return d.Name == "Main" and d:IsA("GuiButton")
+				end)
+				-- The press itself can't be followed here: the client's decks find their plot by another path
+				-- than PlotMixes does, and Lune gives each path its own userdata (Roblox gives one object).
+				check(#signalOf(main, "Activated").handlers == 1, "the main button is wired to the press")
+				main.Activated:Fire()
+				advance(0.3)
+				_ = mark
+				local tracks = findDescendant(decksGui, function(d)
+					return d.Name == "Tracks" and d:IsA("GuiButton")
+				end)
+				tracks.Activated:Fire()
+				advance(0.3)
+				check(gui("TrackShop").Enabled, "the Tracks button opens the shop")
+				local wanted = nil
+				for _, track in shared("Config.Tracks") do
+					if not state.ownedTracks[track.id] then
+						wanted = track
+						break
+					end
+				end
+				if wanted then
+					PlayerState.setCash(state, state.cash + wanted.price)
+					advance(0.2)
+					local row = findDescendant(gui("TrackShop"), function(d)
+						return d.Name == wanted.id
+					end)
+					local buy = row and row:FindFirstChild("Buy")
+					if check(buy ~= nil, "the shop lists " .. wanted.id) then
+						buy.Activated:Fire()
+						advance(0.5)
+						check(state.ownedTracks[wanted.id] == true, "the shop's Buy button buys " .. wanted.id)
+					end
+				end
+				local leaveButton = findDescendant(decksGui, function(d)
+					return d.Name == "Leave" and d:IsA("GuiButton")
+				end)
+				leaveButton.Activated:Fire()
+				advance(0.3)
+				check(clientCamera.CameraType ~= roblox.Enum.CameraType.Scriptable, "Leave gives the camera back")
+			end
+		end
+		filipBody:PivotTo(plot.Spawn.CFrame * CFrame.new(0, 3, 0))
+	end
 
 	-- Buys everything at the current location with plenty of cash.
 	local function buyAll()
@@ -1024,7 +1116,13 @@ local okSession, sessionError = pcall(function()
 			end
 			local cash = state.cash
 			local mark = #sent
-			remotes.BookDj.OnServerEvent:Fire(filip, "dj_kiko")
+			local kikoRow = findDescendant(gui("DjBoard"), function(d)
+				return d.Name == "dj_kiko"
+			end)
+			local bookButton = kikoRow and kikoRow:FindFirstChild("Book")
+			if check(bookButton ~= nil, "the board lists Kiko with a Book button") then
+				bookButton.Activated:Fire()
+			end
 			advance(0.2)
 			check(state.starDj ~= nil and state.starDj.djId == "dj_kiko", "Kiko is booked")
 			check(plot:GetAttribute("StarDj") == "dj_kiko", "the plot shows Kiko's set")

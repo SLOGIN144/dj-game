@@ -37,6 +37,12 @@ A `cam=` shot is `name:eye:target[:fov[:radius]]`, in studs relative to the loca
 
 ## What this can't check
 
+One limit of Lune itself: it hands out a new userdata every time an instance is reached, so a
+table keyed by an instance only finds it again through the same value. The server passes the
+same values around and is fully covered. On the client, a few lookups (the decks pressing
+through `PlotMixes`) reach the same plot by different paths, so the simulation checks the wiring
+there, not the result. In Roblox an instance is always one object.
+
 These only show in Studio, with `docs/studio-checklist.md`:
 
 - sound and timing by ear: the Audio API is stubbed here;

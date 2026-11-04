@@ -260,7 +260,11 @@ local function guestSpots(): { Vector3 }
 	end
 	for _, x in { -12.5, -7.5, -2.5, 2.5, 7.5, 12.5 } do
 		table.insert(spots, v(x, 0.6, 15.5))
-		table.insert(spots, v(x * 1.2, 0.6, -5.5))
+	end
+	-- The deck's edges, for the biggest crowds.
+	for _, z in { -1, 5, 11 } do
+		table.insert(spots, v(-18, 0.6, z))
+		table.insert(spots, v(18, 0.6, z))
 	end
 	-- The closest rows to the stage come first, so a small crowd gathers at the front.
 	table.sort(spots, function(a, b)

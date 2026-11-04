@@ -5,9 +5,10 @@ game to the end ... don't ask me anything"). Some of the working rules say to as
 every decision that would normally wait for his OK is listed here: what was decided, why, and how
 to change it. Nothing here touches monetization. **Each point still needs his OK.**
 
-The version from before the run (Milestone 1, the dorm only) is kept on the branch `prototype`.
-Everything below is on `claude/step2-plots-shop-hud`. None of it has run in Roblox yet: the cloud
-session had no Studio. Every module passes StyLua, Selene, a type check against the Roblox API
+As Filip asked, the whole game from this run is on the branch `prototype` (it was built on
+`claude/step2-plots-shop-hud`, which holds the same). The version from before the run
+(Milestone 1, the dorm only) is kept on the branch `prototype-m1`. Nothing was merged into `main`.
+None of it has run in Roblox yet: the cloud session had no Studio. Every module passes StyLua, Selene, a type check against the Roblox API
 and the Lune specs. `docs/studio-checklist.md` is the list to work through in Studio.
 
 ## Needs Filip's OK first (working rule 9)
@@ -15,7 +16,7 @@ and the Lune specs. `docs/studio-checklist.md` is the list to work through in St
 | # | Decision | Why | How to change it |
 | --- | --- | --- | --- |
 | 1 | **Save schema version 2** adds `goalProgress` (counted goals like "3 Perfect drops"), `djRestUntil` (star DJ rest times) and `settings` (master, music and SFX volume). Version 1 saves load with all three empty. | Without them a rejoin would forget goal counts and DJ rests, and settings wouldn't follow the player. Nothing is published yet, so no real save exists to break. | `Data/SaveSchema.luau` (`VERSION`, `default`, `sanitize`, `migrate`). Dropping v2 means removing the three fields and the step. |
-| 2 | **Building past Milestone 1**: the house party, club and Ibiza, Move on, the jet, star DJs, the VIP and photographer, the leaderboard and settings. | Filip asked for the whole game. The GDD says to build only the current milestone, so the dorm-only version stays on `prototype`. | Use the `prototype` branch for the M1 playtest. |
+| 2 | **Building past Milestone 1**: the house party, club and Ibiza, Move on, the jet, star DJs, the VIP and photographer, the leaderboard and settings. | Filip asked for the whole game. The GDD says to build only the current milestone, so the dorm-only version stays on `prototype-m1`. | Use the `prototype-m1` branch for the M1 playtest. |
 
 ## Design calls the GDD left open
 

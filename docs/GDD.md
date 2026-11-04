@@ -475,7 +475,7 @@ Goal: prove the tycoon loop is fun in one room. It's done when a new player buil
 
 Steps 2–6 are written: step 2 earlier, and steps 3–6 on 2026-11-04 in a cloud session without Studio. Each passes the format, lint and type checks and the pure specs, but steps 3–6 haven't run in Roblox yet. Next is a Studio pass with `docs/studio-checklist.md`; tick the boxes above only after it.
 
-**The autonomous run (2026-11-04).** Filip asked for the whole game to be finished while he slept, without questions. The dorm-only Milestone 1 version is kept on the branch `prototype`. The working branch goes on to Milestone 2's content, as a prototype that still needs Filip's review: Move on, the house party, the club, Ibiza with the jet, star DJs, the VIP and photographer events, the leaderboard and settings. Every decision that would normally wait for Filip is in `docs/decisions.md`. Model sheets for the art are on the Claude Design canvas (`docs/art-pipeline.md`).
+**The autonomous run (2026-11-04).** Filip asked for the whole game to be finished while he slept, without questions. The whole result is on the branch `prototype`, and the dorm-only Milestone 1 version on `prototype-m1`. It goes on to Milestone 2's content, as a prototype that still needs Filip's review: Move on, the house party, the club, Ibiza with the jet, star DJs, the VIP and photographer events, the leaderboard and settings. Every decision that would normally wait for Filip is in `docs/decisions.md`. Model sheets for the art are on the Claude Design canvas (`docs/art-pipeline.md`).
 
 ## Roadmap after the prototype
 

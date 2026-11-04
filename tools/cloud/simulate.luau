@@ -1068,6 +1068,12 @@ local okSession, sessionError = pcall(function()
 		end
 		check(plot:GetAttribute("Guests") == location.guests.max, location.id .. " shows its full crowd")
 		advance(3)
+		if location.id == "ibiza" then
+			local wallGui = findDescendant(plot.Items, function(d)
+				return d.Name == "LedWall" and d:IsA("SurfaceGui")
+			end)
+			check(wallGui ~= nil and #wallGui:GetChildren() > 10, "the LED wall shows its level bars")
+		end
 		local shown = #workspace.LocalGuests:GetChildren()
 		check(shown == math.min(location.guests.max, 40), location.id .. " draws " .. shown .. " guests")
 		local header = label("Goals", "Header")

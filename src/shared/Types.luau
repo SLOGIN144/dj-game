@@ -88,8 +88,9 @@ export type StarDj = {
 
 -- What the client's light show does with a part on the beat (see Controllers/LightShow).
 --   led: the main colour wash; speaker: pumps on every kick; spot: alternating fixtures that
---   strobe on drops; disco: spins and sparkles; screen: flickers; neon: a sign that flashes on drops.
-export type LightRole = "led" | "speaker" | "spot" | "disco" | "screen" | "neon"
+--   strobe on drops; disco: spins and sparkles; screen: flickers; neon: a sign that flashes on drops;
+--   wall: a big LED wall that shows level bars on the beat (Controllers/LedWall).
+export type LightRole = "led" | "speaker" | "spot" | "disco" | "screen" | "neon" | "wall"
 
 -- One blockout part, placed relative to a plot's origin (centre of the plot base's top face,
 -- local -Z towards the street).

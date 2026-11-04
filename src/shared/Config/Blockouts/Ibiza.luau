@@ -435,7 +435,7 @@ local Ibiza: Types.Blockout = {
 				colour = VIOLET,
 				material = Enum.Material.Neon,
 				light = { colour = VIOLET, brightness = 1.5, range = 40 },
-				lightRole = "screen",
+				lightRole = "wall",
 			},
 		},
 		ibiza_truss = {

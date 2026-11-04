@@ -12,6 +12,7 @@ local RunService = game:GetService("RunService")
 
 local Locations = require(ReplicatedStorage.Shared.Config.Locations)
 local MixTimeline = require(ReplicatedStorage.Shared.Music.MixTimeline)
+local LedWall = require(script.Parent.LedWall)
 local PlotMixes = require(script.Parent.PlotMixes)
 local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
 local TrackInfo = require(ReplicatedStorage.Shared.Music.TrackInfo)
@@ -46,6 +47,7 @@ type LightPart = {
 	beam: Beam?, -- a light beam out of it (moving heads, lasers)
 	beamBrightness: number,
 	showcase: boolean, -- part of the club left on the street, not the current location
+	wall: LedWall.Wall?, -- the picture on an LED wall
 	foundAt: number,
 	pivot: CFrame?, -- the disco ball's or moving head's resting CFrame
 }
@@ -87,6 +89,7 @@ local function scan(plot: Model, entry: PlotLights)
 						brightness = if light then light.Brightness else 0,
 						beam = beam,
 						beamBrightness = if beam then beam.Brightness else 1,
+						wall = if role == "wall" then LedWall.build(descendant) else nil,
 						showcase = name == "Showcase",
 						foundAt = os.clock(),
 					}
@@ -218,8 +221,10 @@ local function drive(plot: Model, entry: PlotLights, now: number)
 		end
 		return colours[1]
 	end
-	local colour = wash(palette(locationId))
-	local showcaseColour = wash(palette(if locationId then PlotSpace.showcaseFor(locationId) else nil))
+	local colours = palette(locationId)
+	local showcaseColours = palette(if locationId then PlotSpace.showcaseFor(locationId) else nil)
+	local colour = wash(colours)
+	local showcaseColour = wash(showcaseColours)
 
 	for _, item in entry.parts do
 		if item.part.Parent == nil then
@@ -267,6 +272,20 @@ local function drive(plot: Model, entry: PlotLights, now: number)
 		elseif role == "screen" then
 			tint = item.colour
 			amount = 0.6 + 0.4 * kick * intensity
+		elseif role == "wall" then
+			tint = item.colour
+			amount = 0.5 + 0.3 * intensity
+			local wall = item.wall
+			if wall then
+				LedWall.draw(wall, {
+					beat = beat,
+					kick = kick,
+					intensity = intensity,
+					drop = kind == "drop",
+					colours = if item.showcase then showcaseColours else colours,
+					blast = blast,
+				})
+			end
 		elseif role == "neon" then
 			tint = item.colour
 			amount = if kind == "drop" then 0.6 + 0.4 * kick else 0.75

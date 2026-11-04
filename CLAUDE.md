@@ -5,8 +5,8 @@ Roblox DJ club tycoon: build your club button by button, from a dorm room to an 
 
 ## Current focus
 
-Milestone 1 (tycoon prototype). Step 1 (tooling, track data, Track Tagger) is done and the 7 tracks are tagged.
-On 2026-11-03 the game became a club tycoon; the old timing-set prototype is kept under the git tag `set-prototype`. Next: build order step 2 (street, plots, buttons, income, register). Build only the current milestone.
+Milestone 1 (tycoon prototype): only the first room, the dorm. Step 1 (tooling, track data, Track Tagger) is done and the 7 tracks are tagged; the code for step 2 (street, plots, buttons, income, register, dorm) is committed.
+On 2026-11-03 the game became a club tycoon; the old timing-set prototype is kept under the git tag `set-prototype`. Next: build order step 3 (self-mixing music per plot). Build only the current milestone.
 
 ## Stack
 

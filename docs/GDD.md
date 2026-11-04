@@ -92,7 +92,7 @@ Around it, every few minutes: a club event, a goal from the location's character
 - **Many more locations later.** Filip wants far more than these four (between them and after Ibiza). The four are the spine for the prototype and launch planning; the full list is an open question, and every system must take a new location as one more `Locations.luau` entry with its items.
 - When every button is bought, a **Move on** button appears. The building grows to its next stage, the next location opens behind its door (or the jet unlocks, for Ibiza), and building starts again with pricier parts that pay more. Cash, tracks, star DJs and goals carry over.
 - **Rebirth (world tour):** after Ibiza, in a later update.
-- Launch ships all four locations; Milestone 1 builds the first two.
+- Launch ships all four locations; Milestone 1 builds only the first.
 
 ### Money
 
@@ -426,50 +426,50 @@ From the set prototype, `AudioEngine`, `BeatClock`, `TimingJudge`, `TrackInfo`, 
 
 ## Milestone 1: prototype
 
-Goal: prove the tycoon loop is fun. It's done when a new player builds the dorm room and the house party without help and wants to keep going.
+Goal: prove the tycoon loop is fun in one room. It's done when a new player builds the whole dorm room without help and wants the next room. The dorm stays the open-front room on its plot for now.
 
 ### In scope
 
 - [x] Repo and tooling: Rojo project, Rokit, Selene, StyLua, `CLAUDE.md`, `docs/GDD.md`, git.
 - [x] Track Tagger tool, and 7 licensed house/tech house tracks tagged.
 - [ ] A night street with 2 plots, plot assignment on join.
-- [ ] Buttons, income, the register and Move on, data-driven from `Items.luau` and `Balance.luau`.
-- [ ] Dorm room (~10 buttons) and house party (~15 buttons) blockouts.
+- [ ] Buttons, income and the register, data-driven from `Items.luau` and `Balance.luau`.
+- [ ] Dorm room blockout (~10 buttons).
 - [ ] Each plot's self-mixing music, heard on that plot; lights and guests on the beat.
 - [ ] The decks and the drop bonus.
 - [ ] Track shop (2 owned at start, the rest buyable).
-- [ ] One event (blown speaker), one star DJ, Max's 3 dorm goals.
+- [ ] One event (blown speaker), Max's 3 dorm goals.
 - [ ] HUD, the decks UI, simple shop and dialogue panels, for mouse, keyboard and touch.
+- [ ] After the last button, Max says more is coming; the music, drops and income keep going.
 - [ ] Saving (after Filip publishes the place and approves the data package and schema).
 
-**Out of scope:** club and Ibiza locations, the VIP and photographer events, more characters, rebirth, monetization, global leaderboards, offline earnings.
+**Out of scope:** the house party, club and Ibiza locations, Move on, the growing buildings, interiors and the jet, star DJs, the VIP and photographer events, more characters, rebirth, monetization, global leaderboards, offline earnings.
 
 ### Acceptance criteria
 
 - A first-time player knows what to do within 30 seconds, without outside help.
-- The dorm takes about 10 minutes and the house party about 40 with active play (tunable in `Balance.luau`).
+- The dorm takes about 10 minutes with active play (tunable in `Balance.luau`).
 - The music never stops, and mixes stay on the beat (phase error under 1/16 beat).
 - A Perfect drop fires confetti, a cheer and a light blast on the exact beat, and doubles income.
 - Two players in one server see each other's clubs and each hears the music of the plot they stand on.
 - Leaving and rejoining restores the club as it was.
 - No errors in the output, and 60 FPS on Filip's PC.
-- Filip plays it for 30 minutes and wants to keep going. This is the real test.
+- Filip plays through the whole dorm and wants the next room. This is the real test.
 
 ### Build order
 
 1. [x] Tooling, track data and the Track Tagger.
-2. Street, plots, buttons, income and the register, with the economy modules tested (dorm room items first).
-3. Dorm and house party blockouts, all their items, Move on.
-4. Self-mixing music per plot (`MixPlanner` on the server, playback on the client), guests and lights on the beat.
-5. The decks and the drop bonus.
-6. Track shop, blown speaker event, star DJ, Max's goals, dialogue.
-7. Saving, then a polish pass and a two-player test.
+2. Street, plots, buttons, income and the register, with the economy modules tested, and the dorm blockout with all its items.
+3. Self-mixing music per plot (`MixPlanner` on the server, playback on the client), guests and lights on the beat.
+4. The decks and the drop bonus.
+5. Track shop, blown speaker event, Max's goals, dialogue.
+6. Saving, then a polish pass and a two-player test.
 
 ## Roadmap after the prototype
 
 Launch happens only when the core loop is polished and has no known bugs; big content comes after as updates.
 
-1. **Milestone 2 — Full launch content:** the club and Ibiza locations, all three events, all characters and goals, more star DJs, more tracks.
+1. **Milestone 2 — Full launch content:** the new street (growing buildings, interiors, the jet), Move on, the house party, club and Ibiza locations, all three events, all characters and goals, star DJs, more tracks.
 2. **Milestone 3 — Launch prep:** monetization (decided with Filip), settings, mobile performance pass, leaderboards, analytics events, maturity questionnaire, icon and thumbnails, trailer clips for TikTok. Then launch v1.0.
 3. **Updates:** rebirth and the world tour, offline earnings, B2B at one plot, club likes, themed nights, new genres.
 
@@ -500,7 +500,6 @@ Launch happens only when the core loop is polished and has no known bugs; big co
 - [ ] Genre list beyond house and tech house, after checking the Creator Store.
 - [ ] What Roblox allows for sponsor banners.
 - [ ] More art references: a colour palette per location.
-- [ ] Milestone 1 and the new street: rebuild now or later? Proposed default: build the growing buildings and the dorm and apartment as interiors now, because only the dorm exists so far as an open-front room. The jet and the airstrip wait for Ibiza (Milestone 2).
 - [ ] How doors work. Proposed default: an interior is a separate space away from the street, reached with a short fade, so it can be any size.
 - [ ] What the street sounds like. Proposed default: a quiet, muffled mix from the nearest building, with the full mix only inside.
 - [ ] Visiting a friend's Ibiza before unlocking your own. Proposed default: the jet stays locked until you unlock Ibiza yourself.

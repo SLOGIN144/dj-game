@@ -86,7 +86,7 @@ function Shop.buy(state: PlayerState.State, itemId: string): boolean
 	Shop.refresh(state)
 
 	if Unlocks.isComplete(state.locationId, state.bought) then
-		-- Move on to the next location comes in build step 3.
+		-- Move on to the next location comes in Milestone 2.
 		print(string.format("[Shop] %s finished %s", player.Name, state.locationId))
 	end
 	return true

@@ -37,7 +37,7 @@ end
 
 function Hud.start()
 	local player = Players.LocalPlayer
-	-- The dorm's accent for now; it follows the player's location once Move on exists (step 3).
+	-- The dorm's accent for now; it follows the player's location once Move on exists (Milestone 2).
 	local accent = Locations[1].colour
 
 	local gui = Instance.new("ScreenGui")

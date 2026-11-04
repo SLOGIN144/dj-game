@@ -245,6 +245,15 @@ if "overview" in views:
     render(Camera((-118, 46, -30), (60, 0, 10), 1600, 900, fov=60), "street_overview", exposure=2.2)
 if "plan" in views:
     render(Camera((60, 600, 0.01), (60, 0, 0), 1600, 1000, scale=2.4), "street_plan", exposure=2.5)
+# World-space shots: "world=name:ex/ey/ez:tx/ty/tz[:fov]" (nothing filtered out).
+for view in views:
+    if view.startswith("world="):
+        name, eye, target, *rest = view[6:].split(":")
+        fov = float(rest[0]) if rest else 60
+        e = [float(x) for x in eye.split("/")]
+        t = [float(x) for x in target.split("/")]
+        render(Camera(np.array(e), np.array(t), 1600, 900, fov=fov), name, exposure=1.8)
+
 # Custom shots: "cam=name:ex,ey,ez:tx,ty,tz[:fov[:radius]]" in plot-local coordinates.
 for view in views:
     if view.startswith("cam="):

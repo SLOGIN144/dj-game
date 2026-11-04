@@ -165,6 +165,12 @@ local function blockout(origin: CFrame, stage: Buildings.Stage, seed: number, pa
 	end
 end
 
+-- A building that isn't a plot's (the street's filler blocks): `origin` is the bottom centre of
+-- where its front face goes, looking at the street.
+function Building.decor(origin: CFrame, stage: Buildings.Stage, seed: number, parent: Instance)
+	blockout(origin, stage, seed, parent)
+end
+
 -- Replaces the plot's building with the one for `stageId` (a location id or "free").
 function Building.show(plot: Model, stageId: string, seed: number)
 	local folder = plot:FindFirstChild("Building")

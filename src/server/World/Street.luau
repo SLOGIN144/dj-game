@@ -9,6 +9,7 @@ local Balance = require(ReplicatedStorage.Shared.Config.Balance)
 local NightLook = require(script.Parent.NightLook)
 local PlotLayout = require(ReplicatedStorage.Shared.Config.PlotLayout)
 local Skyline = require(script.Parent.Skyline)
+local StreetBlocks = require(script.Parent.StreetBlocks)
 local StreetProps = require(script.Parent.StreetProps)
 local WaterLook = require(script.Parent.WaterLook)
 
@@ -38,12 +39,13 @@ end
 
 local function buildLamp(x: number, z: number, parent: Instance)
 	part("LampPost", Vector3.new(0.6, 14, 0.6), CFrame.new(x, 7.6, z), Color3.fromRGB(40, 40, 48), parent)
-	local head = part("LampHead", Vector3.new(2, 0.6, 2), CFrame.new(x, 14.6, z), Color3.fromRGB(255, 220, 170), parent)
+	-- Warm sodium light, as in docs/concept/street.webp.
+	local head = part("LampHead", Vector3.new(2, 0.6, 2), CFrame.new(x, 14.6, z), Color3.fromRGB(255, 186, 110), parent)
 	head.Material = Enum.Material.Neon
 	local light = Instance.new("PointLight")
-	light.Color = Color3.fromRGB(255, 210, 160)
-	light.Brightness = 1.2
-	light.Range = 26
+	light.Color = Color3.fromRGB(255, 172, 96)
+	light.Brightness = 1.4
+	light.Range = 28
 	light.Shadows = false
 	light.Parent = head
 end
@@ -107,6 +109,11 @@ function Street.build(): { Model }
 		table.insert(plots, plot)
 	end
 
+	StreetBlocks.build(folder, {
+		length = length,
+		plotsHalf = columns * (plotSize.X + PLOT_GAP) / 2,
+		sidewalkEdge = ROAD_WIDTH / 2 + SIDEWALK_WIDTH,
+	})
 	StreetProps.build(folder, {
 		length = length,
 		roadWidth = ROAD_WIDTH,

@@ -23,6 +23,23 @@ export type Track = {
 	price: number,
 }
 
+-- How a track came into a plot's mix: the first track, a beat-synced blend, or a short fade.
+export type MixIn = "start" | "sync" | "fade"
+
+-- One track's turn in a plot's mix. The server plans these (Music/MixPlanner) and replicates them;
+-- times are server times (workspace:GetServerTimeNow()), beats count from the track's first downbeat.
+export type MixSegment = {
+	n: number, -- running number on the plot; the two decks take turns by it
+	trackId: string,
+	startTime: number, -- when the track starts playing, at fromBeat
+	fromBeat: number,
+	dropBeat: number, -- the drop it comes in on, at the end of its blend
+	speed: number, -- playback speed while it blends in (the outgoing tempo); eases back to 1 after the drop
+	mixIn: MixIn,
+	outBeat: number, -- where the transition to the next track starts
+	endBeat: number?, -- where it stops; set once the next segment is planned
+}
+
 export type ItemKind = "income" | "gear" | "feature"
 
 export type Item = {

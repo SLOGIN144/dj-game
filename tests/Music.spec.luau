@@ -45,13 +45,14 @@ local EARLY_DROP = track("early", 128, "tech house", 4, {
 
 return {
 	-- TimingJudge
-	["presses within 50 ms are Perfect"] = function()
+	["presses within 60 ms are Perfect"] = function()
 		T.equal(TimingJudge.grade(0.03), "perfect")
-		T.equal(TimingJudge.grade(-0.049), "perfect")
+		T.equal(TimingJudge.grade(-0.059), "perfect")
 	end,
 
-	["presses within 120 ms are Good, later ones Miss"] = function()
+	["presses within 140 ms are Good, later ones Miss"] = function()
 		T.equal(TimingJudge.grade(0.1), "good")
+		T.equal(TimingJudge.grade(-0.139), "good")
 		T.equal(TimingJudge.grade(-0.2), "miss")
 	end,
 
@@ -77,9 +78,9 @@ return {
 		T.equal(drop, 256)
 	end,
 
-	["a track mixes out on a phrase after playing its drop"] = function()
-		T.equal(TransitionPlanner.mixOutBeat(CLUB, 64, 70, 500), 128)
-		T.equal(TransitionPlanner.mixOutBeat(CLUB, 64, 120, 500), 160)
+	["a track mixes out on a phrase after playing its drop for 32 bars"] = function()
+		T.equal(TransitionPlanner.mixOutBeat(CLUB, 64, 70, 500), 192)
+		T.equal(TransitionPlanner.mixOutBeat(CLUB, 64, 170, 500), 208)
 	end,
 
 	["a short track mixes out before it ends"] = function()

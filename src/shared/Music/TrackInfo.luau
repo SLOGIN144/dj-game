@@ -34,4 +34,20 @@ function TrackInfo.sectionEnd(track: Types.Track, index: number, lengthBeats: nu
 	return if nextSection then nextSection.startBeat else lengthBeats
 end
 
+-- The last beat the track is known to reach: the start of its last section. Track length isn't
+-- tagged, so a mix is planned to be done with a track by then.
+function TrackInfo.safeEndBeat(track: Types.Track): number
+	local last = track.sections[#track.sections]
+	return if last then last.startBeat else 0
+end
+
+-- The tracks by id.
+function TrackInfo.byId(tracks: { Types.Track }): { [string]: Types.Track }
+	local lookup = {}
+	for _, track in tracks do
+		lookup[track.id] = track
+	end
+	return lookup
+end
+
 return TrackInfo

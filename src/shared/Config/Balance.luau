@@ -4,10 +4,11 @@
 
 local Balance = {}
 
--- How close a press has to be to its target beat, in seconds either side.
+-- How close a press has to be to its target beat, in seconds either side. Wider than a rhythm
+-- game's, since the drop press is a bonus, not a test.
 Balance.Timing = {
-	perfectWindow = 0.05,
-	goodWindow = 0.12,
+	perfectWindow = 0.06,
+	goodWindow = 0.14,
 	-- Added to every press to make up for the delay before the player hears a beat.
 	-- Calibrated in Settings later; 0 until then.
 	latencyOffset = 0,
@@ -16,7 +17,7 @@ Balance.Timing = {
 -- How the game mixes one track into the next.
 Balance.Transition = {
 	blendBars = 8, -- length of the blend; the incoming track's drop lands at its end
-	playDropBars = 16, -- how long a track plays from its drop before it mixes out
+	playDropBars = 32, -- how long a track plays from its drop before it mixes out (about one drop every 1-2 minutes)
 	phraseBeats = 16, -- transitions start on a multiple of this many beats
 	leadBeats = 32, -- the next transition is planned at least this far ahead
 	countdownBeats = 4, -- the 4-3-2-1 before a timed press
@@ -24,11 +25,20 @@ Balance.Transition = {
 	tempoReturnBars = 16, -- after a blend, the new track eases back to its own tempo over this
 	syncToleranceSeconds = 0.012, -- the incoming deck is nudged back when it drifts further than this
 	tempoRange = 0.08, -- tracks within ±8% of each other's tempo get a synced blend
+	fadeBars = 2, -- tracks further apart: the outgoing one fades out over this, then the next one starts
+}
+
+-- How the server plans and publishes each plot's mix.
+Balance.Mix = {
+	startDelay = 3, -- seconds from planning a plot's first track to it starting, so clients can load it
+	planAheadSeconds = 60, -- the next transition is always planned at least this far ahead
+	recentTracks = 2, -- a track doesn't come back while it's among the last this many played, if there's a choice
 }
 
 Balance.Start = {
 	cash = 50, -- enough for the first paid button right away
 	locationId = "dorm",
+	tracks = { "until_sunrise", "london_loves" }, -- the tracks a new player owns
 }
 
 -- Pacing per location. Buying a location's items in order takes its income from startIncome to

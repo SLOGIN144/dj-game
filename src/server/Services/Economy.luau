@@ -9,8 +9,12 @@ local PlayerState = require(script.Parent.PlayerState)
 local PlotView = require(script.Parent.Parent.World.PlotView)
 local Register = require(ReplicatedStorage.Shared.Economy.Register)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 
 local Economy = {}
+
+-- Fires (state, amount) when an owner collects from their register.
+Economy.collected = Signal.new()
 
 local LABEL_EVERY = 0.25 -- seconds between register label updates
 local COLLECT_LOCK = 0.5 -- seconds between two collects by one player
@@ -36,6 +40,17 @@ local function collect(state: PlayerState.State, collected: RemoteEvent)
 	PlayerState.setCash(state, state.cash + amount)
 	showRegister(state)
 	collected:FireClient(state.player, amount)
+	Economy.collected:fire(state, amount)
+end
+
+-- Gives the player cash outside the register (goal rewards, tips) and shows the "+$".
+function Economy.reward(state: PlayerState.State, amount: number)
+	local whole = math.floor(amount)
+	if whole <= 0 then
+		return
+	end
+	PlayerState.setCash(state, state.cash + whole)
+	Remotes.event("Collected"):FireClient(state.player, whole)
 end
 
 -- Fills the registers and lets each plot's owner collect from theirs.

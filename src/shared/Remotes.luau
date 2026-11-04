@@ -9,6 +9,11 @@ local NAMES = {
 	"DropPress", -- client -> server: the owner pressed for a drop at the decks
 	"DropResult", -- server -> owner: the press's grade and boost
 	"DropHit", -- server -> everyone: a plot caught a drop (confetti, cheer, light blast)
+	"BuyTrack", -- client -> server: buy a track in the shop
+	"TrackResult", -- server -> buyer: whether it worked
+	"Say", -- server -> player: a line from the location's host character
+	"GoalDone", -- server -> player: a goal was finished, and its reward
+	"EventNotice", -- server -> owner: an event started or ended on their plot
 }
 
 local Remotes = {}

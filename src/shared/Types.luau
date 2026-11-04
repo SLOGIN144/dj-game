@@ -97,6 +97,34 @@ export type Blockout = {
 	speakerItem: string?, -- the item the blown speaker event happens to
 }
 
+-- What a goal counts: collecting from the register, buying a given item, catching a drop
+-- (Perfect or Good) at the decks, fixing the blown speaker, or owning a number of tracks.
+export type GoalKind = "collect" | "buy" | "drop" | "fix" | "tracks"
+
+export type Goal = {
+	id: string, -- unique across locations, prefixed with its location
+	text: string, -- shown in the tracker
+	kind: GoalKind,
+	target: string?, -- the item id, for "buy"
+	count: number?, -- how many, for "tracks" (and later for repeated goals)
+	reward: number, -- cash
+	line: string, -- what the host says when it's done
+}
+
+-- A location's host character: their goals and the lines they say.
+export type Host = {
+	name: string,
+	role: string,
+	colour: Color3, -- their portrait colour
+	goals: { Goal },
+	lines: {
+		intro: string, -- a new player's first line
+		done: string, -- after the location's last button
+		speakerBlown: string,
+		speakerFixed: string,
+	},
+}
+
 -- What one item costs and does to its plot's income.
 export type ItemEffect = {
 	cost: number,

@@ -10,9 +10,14 @@ local PlayerState = require(script.Parent.PlayerState)
 local PlotLayout = require(ReplicatedStorage.Shared.Config.PlotLayout)
 local PlotView = require(script.Parent.Parent.World.PlotView)
 local Pricing = require(ReplicatedStorage.Shared.Economy.Pricing)
+local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 local Unlocks = require(ReplicatedStorage.Shared.Economy.Unlocks)
 
 local Shop = {}
+
+-- Fires (state, itemId) after a purchase, and (state) once the location's last item is bought.
+Shop.bought = Signal.new()
+Shop.completed = Signal.new()
 
 local BUY_LOCK = 0.3 -- seconds between two purchases by one player, so one step buys once
 local STAND_RADIUS = PlotLayout.padSize / 2 + 1 -- a character this close to a pad's centre stands on it
@@ -84,9 +89,10 @@ function Shop.buy(state: PlayerState.State, itemId: string): boolean
 	PlayerState.updateIncome(state)
 	Shop.refresh(state)
 
+	Shop.bought:fire(state, itemId)
 	if Unlocks.isComplete(state.locationId, state.bought) then
-		-- Move on to the next location comes in Milestone 2.
-		print(string.format("[Shop] %s finished %s", player.Name, state.locationId))
+		-- Move on to the next location comes in Milestone 2; for now the host says more is coming.
+		Shop.completed:fire(state)
 	end
 	return true
 end

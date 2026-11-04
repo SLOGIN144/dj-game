@@ -1,7 +1,7 @@
 --!strict
--- Each player's game state while they're in the server. The server owns every cash value; Cash
--- and Income are mirrored as Player attributes so the client can show them. Nothing is saved yet
--- (saving is build step 7).
+-- Each player's game state while they're in the server. The server owns every cash value; Cash,
+-- Income, owned tracks and finished goals are mirrored as Player attributes so the client can
+-- show them.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -27,6 +27,7 @@ export type State = {
 	income: number, -- cash per second with every bonus, what the register fills with
 	boost: Boost?,
 	speakerBlown: boolean,
+	goalsDone: { [string]: boolean }, -- the host character's goals finished
 	stats: Stats,
 }
 
@@ -47,6 +48,7 @@ function PlayerState.create(player: Player, plot: Model): State
 		income = 0,
 		boost = nil,
 		speakerBlown = false,
+		goalsDone = {},
 		stats = { perfectDrops = 0, goodDrops = 0, eventsDone = 0, playSeconds = 0 },
 	}
 	for _, trackId in Balance.Start.tracks do
@@ -55,6 +57,7 @@ function PlayerState.create(player: Player, plot: Model): State
 	states[player] = state
 	PlayerState.setCash(state, state.cash)
 	PlayerState.updateIncome(state)
+	PlayerState.mirror(state)
 	return state
 end
 
@@ -79,6 +82,22 @@ end
 function PlayerState.setIncome(state: State, value: number)
 	state.income = value
 	state.player:SetAttribute("Income", value)
+end
+
+local function ids(set: { [string]: boolean }): string
+	local list = {}
+	for id in set do
+		table.insert(list, id)
+	end
+	table.sort(list)
+	return table.concat(list, ",")
+end
+
+-- Mirrors the owned tracks and finished goals as Player attributes (comma-separated ids) for the
+-- track shop and the goal tracker.
+function PlayerState.mirror(state: State)
+	state.player:SetAttribute("OwnedTracks", ids(state.ownedTracks))
+	state.player:SetAttribute("GoalsDone", ids(state.goalsDone))
 end
 
 -- Tracks the player bought in the shop (the starter tracks don't count for the bonus).

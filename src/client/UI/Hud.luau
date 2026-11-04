@@ -19,15 +19,17 @@ local FLOAT = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out
 local REFRESH = 0.1 -- seconds between boost timer updates
 
 local gui: ScreenGui
+local floating = 0 -- floats on screen right now, so new ones stack under them
 
 local function number(value: unknown): number
 	return if typeof(value) == "number" then value else 0
 end
 
--- Floating text that rises from `position` and fades out.
+-- Floating text that rises from `position` and fades out. Several at once stack.
 function Hud.float(text: string, colour: Color3, position: UDim2?)
-	local popup =
-		Style.label(gui, "Float", text, UDim2.fromOffset(200, 32), position or UDim2.new(0.5, -100, 0, 104), colour)
+	local start = (position or UDim2.new(0.5, -100, 0, 104)) + UDim2.fromOffset(0, floating * 30)
+	floating += 1
+	local popup = Style.label(gui, "Float", text, UDim2.fromOffset(200, 32), start, colour)
 	popup.TextStrokeTransparency = 0.5
 	local tween = TweenService:Create(popup, FLOAT, {
 		Position = popup.Position - UDim2.fromOffset(0, 40),
@@ -35,6 +37,7 @@ function Hud.float(text: string, colour: Color3, position: UDim2?)
 		TextStrokeTransparency = 1,
 	})
 	tween.Completed:Connect(function()
+		floating -= 1
 		popup:Destroy()
 	end)
 	tween:Play()
@@ -84,6 +87,24 @@ function Hud.start()
 		boost.Visible = multiplier > 1 and left > 0
 		if boost.Visible then
 			boostText.Text = string.format("x%s BOOST  %ds", tostring(multiplier), math.ceil(left))
+		end
+	end)
+
+	-- A banner while an event needs the player (the blown speaker).
+	local notice = Style.panel(gui, "Notice", UDim2.fromOffset(330, 30), UDim2.new(0.5, 0, 0, 114), Vector2.new(0.5, 0))
+	Style.stroke(notice, Style.WARN)
+	notice.Visible = false
+	Style.label(
+		notice,
+		"Text",
+		"Your speaker blew! Hold Fix on it to repair it.",
+		UDim2.new(1, -16, 1, -8),
+		UDim2.fromOffset(8, 4),
+		Style.WARN
+	)
+	Remotes.event("EventNotice").OnClientEvent:Connect(function(kind: unknown, active: unknown)
+		if kind == "speaker" then
+			notice.Visible = active == true
 		end
 	end)
 

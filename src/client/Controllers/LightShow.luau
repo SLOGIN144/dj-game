@@ -188,6 +188,7 @@ local function drive(plot: Model, entry: PlotLights, now: number)
 		blast = math.max(blast, entry.flashStrength * (1 - sinceFlash / FLASH_SECONDS))
 	end
 
+	local blown = plot:GetAttribute("SpeakerBlown") == true
 	local colours = palette(plot)
 	local colour = colours[1]
 	if kind == "drop" then
@@ -203,6 +204,9 @@ local function drive(plot: Model, entry: PlotLights, now: number)
 			amount = 0.35 + 0.65 * intensity * (0.6 + 0.4 * kick)
 		elseif role == "speaker" then
 			amount = 0.2 + 0.8 * kick * math.sqrt(intensity)
+			if blown then
+				amount = if math.random() < 0.12 then 0.7 else 0.04 -- a blown speaker only sputters
+			end
 		elseif role == "spot" then
 			tint = item.colour
 			if kind == "drop" then

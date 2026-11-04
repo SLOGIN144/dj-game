@@ -81,11 +81,22 @@ local function onAction(_: string, state: Enum.UserInputState, _: InputObject): 
 	return Enum.ContextActionResult.Sink -- Space doesn't jump at the decks
 end
 
+-- Space presses at the decks, so jumping is off there; sinking the key alone may not stop the
+-- default controls.
+local function setJumping(enabled: boolean)
+	local character = player.Character
+	local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
+	if humanoid then
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, enabled)
+	end
+end
+
 local function leave()
 	if not playing then
 		return
 	end
 	playing = false
+	setJumping(true)
 	ContextActionService:UnbindAction(ACTION)
 	Camera.release()
 	DecksUI.show(false)
@@ -120,6 +131,7 @@ local function enter()
 		Enum.KeyCode.ButtonA
 	)
 	playing = true
+	setJumping(false)
 	if prompt then
 		prompt.ActionText = "Leave"
 	end

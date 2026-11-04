@@ -121,7 +121,9 @@ function PlayerData.load(player: Player): (SaveSchema.SaveData, LoadResult)
 			claimed[player.UserId] = true
 			return SaveSchema.migrate(loaded), "loaded"
 		elseif outcome == nil then
-			return SaveSchema.default(), if available then "failed" else "unsaved"
+			-- In a live server a failed load asks the player to rejoin, so their real club is never
+			-- replaced by a fresh one; in Studio it just plays unsaved.
+			return SaveSchema.default(), if available and not RunService:IsStudio() then "failed" else "unsaved"
 		end
 		-- Locked: the server they just left may still be saving.
 		task.wait(Balance.Save.lockRetrySeconds)

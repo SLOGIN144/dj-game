@@ -1,5 +1,7 @@
 --!strict
--- The game's RemoteEvents, by name. The server creates them; the client waits for them.
+-- The game's RemoteEvents, by name. The server creates them all when it starts (`createAll`), and
+-- the client waits for them. A remote the server only fired later would leave the client waiting
+-- at start-up.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -22,6 +24,9 @@ local NAMES = {
 	"DevCheat", -- client -> server, Studio only: a testing shortcut (Services/DevTools)
 }
 
+-- Remotes that only exist in Studio (testing shortcuts).
+local STUDIO_ONLY = { DevCheat = true }
+
 local Remotes = {}
 
 function Remotes.event(name: string): RemoteEvent
@@ -43,6 +48,16 @@ function Remotes.event(name: string): RemoteEvent
 		return remote
 	end
 	return ReplicatedStorage:WaitForChild("Remotes"):WaitForChild(name) :: RemoteEvent
+end
+
+-- Creates every remote (on the server, before anything else starts).
+function Remotes.createAll()
+	assert(RunService:IsServer(), "only the server creates remotes")
+	for _, name in NAMES do
+		if not STUDIO_ONLY[name] or RunService:IsStudio() then
+			Remotes.event(name)
+		end
+	end
 end
 
 return Remotes

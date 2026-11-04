@@ -1,6 +1,8 @@
 --!strict
 -- Server entry point: builds the street, then starts the services and hands out plots.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 local Decks = require(script.Parent.Services.Decks)
 local DevTools = require(script.Parent.Services.DevTools)
 local Economy = require(script.Parent.Services.Economy)
@@ -10,6 +12,7 @@ local Leaderboard = require(script.Parent.Services.Leaderboard)
 local Music = require(script.Parent.Services.Music)
 local Plots = require(script.Parent.Services.Plots)
 local Progression = require(script.Parent.Services.Progression)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Settings = require(script.Parent.Services.Settings)
 local Shop = require(script.Parent.Services.Shop)
 local StarDjs = require(script.Parent.Services.StarDjs)
@@ -17,6 +20,7 @@ local TrackShop = require(script.Parent.Services.TrackShop)
 local Travel = require(script.Parent.Services.Travel)
 local StreetProps = require(script.Parent.World.StreetProps)
 
+Remotes.createAll() -- before anything: clients wait for every remote when they start
 local plots = Plots.build()
 Economy.start(plots)
 Shop.start()

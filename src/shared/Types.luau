@@ -42,11 +42,25 @@ export type MixSegment = {
 
 export type ItemKind = "income" | "gear" | "feature"
 
+-- What a feature item switches on.
+--   booking: the star DJ board; confetti, co2, fireworks: a payoff on every drop;
+--   register: the register holds more.
+export type Feature = "booking" | "confetti" | "co2" | "fireworks" | "register"
+
 export type Item = {
 	id: string, -- unique across all locations, prefixed with its location ("dorm_lamp")
 	name: string, -- shown on the button
 	kind: ItemKind, -- income and feature items add cash per second; gear multiplies the plot's income
+	feature: Feature?, -- what a feature item switches on
+	replaces: string?, -- an item of the same location this one takes the place of (its parts are hidden)
 }
+
+-- Where a location is built: on the plot by the street, or in a venue of its own (reached by the jet).
+export type Space = "plot" | "venue"
+
+-- Club events (GDD: club life). speaker: a speaker blows and has to be fixed; vip: a VIP waits
+-- at the entrance to be greeted; photographer: a photographer by the decks wants a caught drop.
+export type EventKind = "speaker" | "vip" | "photographer"
 
 export type Location = {
 	id: string,
@@ -54,6 +68,21 @@ export type Location = {
 	colour: Color3, -- neon accent for this location's UI and lights
 	lights: { Color3 }, -- the light show's palette; the first is the location's own colour
 	guests: { min: number, max: number }, -- guests shown, from no income to a finished location
+	space: Space,
+	spaceSize: Vector3, -- the area the location's music and events cover, around its origin
+	events: { EventKind }, -- the club events that can happen here
+}
+
+-- A fictional star DJ the player can book for a guest set (GDD: star DJs). Never a real DJ.
+export type StarDj = {
+	id: string,
+	name: string,
+	style: string, -- a few words about their sound, for the booking board
+	location: string, -- the location that unlocks them; they stay bookable after it
+	price: number, -- cash per booking
+	multiplier: number, -- the plot's income multiplier during their set
+	colour: Color3, -- their signature colour: the board, their portrait, the lights in their set
+	look: { skin: Color3, hair: Color3, top: Color3, accent: Color3 }, -- their figure at the decks
 }
 
 -- What the client's light show does with a part on the beat (see Controllers/LightShow).
@@ -76,7 +105,13 @@ export type PartSpec = {
 	light: { colour: Color3?, brightness: number, range: number, spot: number? }?,
 	text: { text: string, colour: Color3 }?, -- glowing text on the part's front (-Z) face
 	lightRole: LightRole?, -- the client's light show drives this part on the beat
+	beam: { length: number, width: number }?, -- a light beam out of the front face (moving heads, lasers)
+	smoke: { colour: Color3, opacity: number, size: number, rise: number }?, -- haze or smoke from the part
+	fx: DropFx?, -- the client fires this effect from the part on every drop
 }
+
+-- Payoffs a part fires on every drop, once its feature item is bought.
+export type DropFx = "confetti" | "co2" | "fireworks"
 
 -- A location's look: the room that's always there, what each bought item adds, and where the
 -- guests, the decks and the event props are. Positions are relative to the plot origin.
@@ -95,18 +130,21 @@ export type Blockout = {
 		cameraLookAt: Vector3,
 	},
 	speakerItem: string?, -- the item the blown speaker event happens to
+	-- Where the buttons, the register and the spawn go, when not where Config/PlotLayout says.
+	layout: { buttonSlots: { Vector3 }, register: Vector3, spawn: Vector3 }?,
 }
 
 -- What a goal counts: collecting from the register, buying a given item, catching a drop
--- (Perfect or Good) at the decks, fixing the blown speaker, or owning a number of tracks.
-export type GoalKind = "collect" | "buy" | "drop" | "fix" | "tracks"
+-- (Perfect or Good) or a Perfect one at the decks, fixing the blown speaker, owning a number of
+-- tracks, greeting VIPs, or booking a star DJ (a given one, or any).
+export type GoalKind = "collect" | "buy" | "drop" | "perfect" | "fix" | "tracks" | "vip" | "book"
 
 export type Goal = {
 	id: string, -- unique across locations, prefixed with its location
 	text: string, -- shown in the tracker
 	kind: GoalKind,
-	target: string?, -- the item id, for "buy"
-	count: number?, -- how many, for "tracks" (and later for repeated goals)
+	target: string?, -- the item id for "buy", the DJ id for "book" (any DJ when nil)
+	count: number?, -- how many: tracks owned, or times for "perfect", "vip", "drop", "collect", "fix"
 	reward: number, -- cash
 	line: string, -- what the host says when it's done
 }
@@ -122,6 +160,8 @@ export type Host = {
 		done: string, -- after the location's last button
 		speakerBlown: string,
 		speakerFixed: string,
+		vip: string?, -- when a VIP arrives
+		photographer: string?, -- when a photographer turns up
 	},
 }
 

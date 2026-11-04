@@ -1,6 +1,8 @@
 --!strict
--- Every button, per location, in the order they unlock. A location's first item is free and
--- must be an income item. Costs and effects come from Economy/Pricing, not from here.
+-- Every button, per location, in the order they unlock (model sheets: one card per item). A
+-- location's first item is free and must be an income item; it's the location's DJ booth. Costs
+-- and effects come from Economy/Pricing, not from here. `feature` says what a feature item switches
+-- on; `replaces` hides an earlier item of the same location that this one takes the place of.
 
 local Types = require(script.Parent.Parent.Types)
 
@@ -16,6 +18,72 @@ local Items: { [string]: { Types.Item } } = {
 		{ id = "dorm_discoball", name = "Disco Ball", kind = "income" },
 		{ id = "dorm_partylights", name = "Party Lights", kind = "income" },
 		{ id = "dorm_neon", name = "Neon Sign", kind = "income" },
+	},
+	house = {
+		{ id = "house_djtable", name = "DJ Table", kind = "income" },
+		{ id = "house_speakers", name = "Party Speakers", kind = "income" },
+		{ id = "house_stringlights", name = "String Lights", kind = "income" },
+		{ id = "house_sofa", name = "Sofa", kind = "income" },
+		{ id = "house_controller", name = "Three-Deck Controller", kind = "gear" },
+		{ id = "house_posters", name = "Posters", kind = "income" },
+		{ id = "house_floorlamp", name = "Floor Lamp", kind = "income" },
+		{ id = "house_counter", name = "Snack Counter", kind = "income" },
+		{ id = "house_stools", name = "Bar Stools", kind = "income" },
+		{ id = "house_partylights", name = "Party Lights", kind = "income" },
+		{ id = "house_popper", name = "Confetti Popper", kind = "feature", feature = "confetti" },
+		{ id = "house_plants", name = "Big Plants", kind = "income" },
+		{ id = "house_booking", name = "DJ Booking Board", kind = "feature", feature = "booking" },
+		{ id = "house_neon", name = "Neon Sign", kind = "income" },
+		{ id = "house_balcony", name = "Balcony Lights", kind = "income" },
+	},
+	club = {
+		{ id = "club_booth", name = "DJ Booth", kind = "income" },
+		{ id = "club_speakers", name = "Speaker Stacks", kind = "income" },
+		{ id = "club_ledstrips", name = "LED Strips", kind = "income" },
+		{ id = "club_bar", name = "Soda Bar", kind = "income" },
+		{ id = "club_mixer", name = "Players and Mixer", kind = "gear" },
+		{ id = "club_stools", name = "Bar Stools", kind = "income" },
+		{ id = "club_lounge", name = "Lounge Sofas", kind = "income" },
+		{ id = "club_dancefloor", name = "LED Dance Floor", kind = "income" },
+		{ id = "club_truss", name = "Light Truss", kind = "income" },
+		{ id = "club_movingheads", name = "Moving Heads", kind = "income" },
+		{ id = "club_haze", name = "Haze Machine", kind = "income" },
+		{ id = "club_subwoofers", name = "Subwoofers", kind = "gear" },
+		{ id = "club_co2", name = "CO2 Jets", kind = "feature", feature = "co2" },
+		{ id = "club_merch", name = "Merch Stand", kind = "income" },
+		{ id = "club_booking", name = "DJ Booking Screen", kind = "feature", feature = "booking" },
+		{ id = "club_neon", name = "Neon Logo", kind = "income" },
+		{ id = "club_strobes", name = "Strobes", kind = "income" },
+		{ id = "club_register", name = "Bigger Register", kind = "feature", feature = "register" },
+		{ id = "club_vip", name = "VIP Booth", kind = "income" },
+		{ id = "club_4deck", name = "Four-Deck Setup", kind = "gear", replaces = "club_mixer" },
+	},
+	ibiza = {
+		{ id = "ibiza_stage", name = "Beach Stage", kind = "income" },
+		{ id = "ibiza_speakers", name = "Line Arrays", kind = "income" },
+		{ id = "ibiza_dancedeck", name = "Dance Deck", kind = "income" },
+		{ id = "ibiza_palms", name = "Palm Trees", kind = "income" },
+		{ id = "ibiza_mixer", name = "Club Mixer", kind = "gear" },
+		{ id = "ibiza_pool", name = "Pool", kind = "income" },
+		{ id = "ibiza_loungers", name = "Sun Loungers", kind = "income" },
+		{ id = "ibiza_umbrellas", name = "Parasols", kind = "income" },
+		{ id = "ibiza_bar", name = "Juice Bar", kind = "income" },
+		{ id = "ibiza_lanterns", name = "Lanterns", kind = "income" },
+		{ id = "ibiza_ledwall", name = "LED Wall", kind = "income" },
+		{ id = "ibiza_truss", name = "Stage Truss", kind = "income" },
+		{ id = "ibiza_movingheads", name = "Moving Heads", kind = "income" },
+		{ id = "ibiza_pool2", name = "Second Pool", kind = "income" },
+		{ id = "ibiza_cabanas", name = "Cabanas", kind = "income" },
+		{ id = "ibiza_4deck", name = "Four-Deck Setup", kind = "gear", replaces = "ibiza_mixer" },
+		{ id = "ibiza_fireworks", name = "Fireworks", kind = "feature", feature = "fireworks" },
+		{ id = "ibiza_carpet", name = "Red Carpet Entrance", kind = "income" },
+		{ id = "ibiza_lasers", name = "Lasers", kind = "income" },
+		{ id = "ibiza_booking", name = "DJ Booking Board", kind = "feature", feature = "booking" },
+		{ id = "ibiza_merch", name = "Merch Shop", kind = "income" },
+		{ id = "ibiza_co2", name = "CO2 Cannons", kind = "feature", feature = "co2" },
+		{ id = "ibiza_subs", name = "Sub Array", kind = "gear" },
+		{ id = "ibiza_vip", name = "VIP Deck", kind = "income" },
+		{ id = "ibiza_sign", name = "Giant Letters", kind = "income" },
 	},
 }
 

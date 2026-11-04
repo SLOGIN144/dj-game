@@ -33,12 +33,21 @@ local function happen(state: PlayerState.State, happening: GoalCheck.Happening)
 	if not host then
 		return
 	end
-	for _, goal in GoalCheck.finished(host, state.goalsDone, happening) do
+	local before = table.clone(state.goalProgress)
+	local finished = GoalCheck.advance(host, state.goalsDone, state.goalProgress, happening)
+	for _, goal in finished do
 		state.goalsDone[goal.id] = true
-		PlayerState.mirror(state)
+		state.goalProgress[goal.id] = nil
 		Economy.reward(state, goal.reward)
 		Remotes.event("GoalDone"):FireClient(state.player, goal.id, goal.reward)
 		say(state, goal.line)
+	end
+	local counted = false
+	for goalId, count in state.goalProgress do
+		counted = counted or before[goalId] ~= count
+	end
+	if #finished > 0 or counted then
+		PlayerState.mirror(state)
 	end
 end
 
@@ -71,8 +80,11 @@ function Goals.start()
 			say(state, host.lines.done)
 		end
 	end)
-	Decks.caught:connect(function(state: PlayerState.State)
+	Decks.caught:connect(function(state: PlayerState.State, grade: string)
 		happen(state, { kind = "drop" })
+		if grade == "perfect" then
+			happen(state, { kind = "perfect" })
+		end
 	end)
 	Events.started:connect(function(state: PlayerState.State)
 		local host = GoalsConfig[state.locationId]

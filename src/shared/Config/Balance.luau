@@ -65,6 +65,9 @@ Balance.Pricing = {
 	carryOver = 1.0, -- a location's free first item earns this share of the previous location's end income
 	locations = {
 		dorm = { minutes = 10, startIncome = 1, incomeGrowth = 12 },
+		house = { minutes = 40, incomeGrowth = 15 },
+		club = { minutes = 150, incomeGrowth = 20 },
+		ibiza = { minutes = 330, incomeGrowth = 25 },
 	} :: { [string]: { minutes: number, incomeGrowth: number, startIncome: number? } },
 }
 
@@ -82,15 +85,31 @@ Balance.Tracks = {
 	bonusPerTrack = 0.05, -- each track bought in the shop adds this share to the plot's income, for good
 }
 
--- Club events, one at a time. The prototype has only the blown speaker.
+-- Club events, one at a time (which ones can happen where is in Config/Locations). Tips are in
+-- seconds of the plot's income from what it has built.
 Balance.Events = {
-	minSeconds = 180, -- seconds of the owner being on their plot between two events
+	minSeconds = 180, -- seconds of the owner being at their club between two events
 	maxSeconds = 300,
 	speaker = {
 		incomeCut = 0.25, -- income lost while the speaker is blown
 		holdSeconds = 2, -- holding E this long fixes it
-		tipSeconds = 30, -- the tip for fixing it, in seconds of income
+		tipSeconds = 30, -- the tip for fixing it
 	},
+	vip = {
+		waitSeconds = 60, -- how long the VIP waits at the entrance to be greeted
+		tipSeconds = 120, -- the VIP's big tip
+	},
+	photographer = {
+		waitSeconds = 30, -- how long the photographer waits for a caught drop
+		tipSeconds = 180, -- the bonus for the shot
+	},
+}
+
+-- Star DJ guest sets (Config/StarDjs has each DJ's price and multiplier).
+Balance.StarDjs = {
+	setSeconds = 180, -- a guest set lasts this long
+	restSeconds = 900, -- then the DJ rests this long before they can be booked again
+	crowdBonus = 0.25, -- a set draws this share more guests
 }
 
 -- Saving (Services/PlayerData).
@@ -103,6 +122,13 @@ Balance.Save = {
 
 Balance.Register = {
 	capMinutes = 10, -- the register stops filling at this many minutes of income
+	biggerCap = 2, -- the Bigger Register feature multiplies the cap by this
+}
+
+-- Guests drawn on this client across every plot in view (GDD: about 40 on PC, 15 on mobile).
+Balance.Guests = {
+	renderBudget = 40,
+	renderBudgetMobile = 15,
 }
 
 Balance.Buttons = {

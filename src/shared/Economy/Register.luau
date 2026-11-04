@@ -5,14 +5,16 @@ local Balance = require(script.Parent.Parent.Config.Balance)
 
 local Register = {}
 
-function Register.capacity(incomePerSecond: number): number
-	return incomePerSecond * Balance.Register.capMinutes * 60
+-- How much the register holds; the Bigger Register feature (`bigger`) multiplies it.
+function Register.capacity(incomePerSecond: number, bigger: boolean?): number
+	local cap = incomePerSecond * Balance.Register.capMinutes * 60
+	return if bigger then cap * Balance.Register.biggerCap else cap
 end
 
 -- The register's amount after `dt` more seconds of income. Above the cap (income dropped) it
 -- stays where it is rather than losing money.
-function Register.fill(amount: number, incomePerSecond: number, dt: number): number
-	local cap = Register.capacity(incomePerSecond)
+function Register.fill(amount: number, incomePerSecond: number, dt: number, bigger: boolean?): number
+	local cap = Register.capacity(incomePerSecond, bigger)
 	if amount >= cap then
 		return amount
 	end

@@ -6,6 +6,7 @@ local Balance = require(Shared.Config.Balance)
 local Bounds = require(Shared.Util.Bounds)
 local Crowd = require(Shared.Economy.Crowd)
 local Items = require(Shared.Config.Items)
+local Locations = require(Shared.Config.Locations)
 local Format = require(Shared.Util.Format)
 local Income = require(Shared.Economy.Income)
 local Pricing = require(Shared.Economy.Pricing)
@@ -41,8 +42,10 @@ return {
 	end,
 
 	-- Pricing
-	["a location's first item is free"] = function()
-		T.equal(Pricing.effects("dorm")[Items.dorm[1].id].cost, 0)
+	["every location's first item is free"] = function()
+		for _, location in Locations do
+			T.equal(Pricing.effects(location.id)[Items[location.id][1].id].cost, 0, location.id)
+		end
 	end,
 
 	["costs round to two significant figures"] = function()
@@ -52,39 +55,66 @@ return {
 	end,
 
 	["each button costs more than the one before"] = function()
-		local effects = Pricing.effects("dorm")
-		for index = 3, #Items.dorm do
-			local previous = effects[Items.dorm[index - 1].id].cost
-			T.truthy(effects[Items.dorm[index].id].cost > previous, Items.dorm[index].id)
+		for _, location in Locations do
+			local items = Items[location.id]
+			local effects = Pricing.effects(location.id)
+			for index = 3, #items do
+				local previous = effects[items[index - 1].id].cost
+				T.truthy(effects[items[index].id].cost > previous, items[index].id)
+			end
 		end
 	end,
 
 	["gear multiplies the income and everything else adds to it"] = function()
-		local effects = Pricing.effects("dorm")
-		for _, item in Items.dorm do
-			local effect = effects[item.id]
-			if item.kind == "gear" then
-				T.truthy(effect.multiplier > 1 and effect.flat == 0, item.id)
-			else
-				T.truthy(effect.flat > 0 and effect.multiplier == 1, item.id)
+		for _, location in Locations do
+			local effects = Pricing.effects(location.id)
+			for _, item in Items[location.id] do
+				local effect = effects[item.id]
+				if item.kind == "gear" then
+					T.truthy(effect.multiplier > 1 and effect.flat == 0, item.id)
+				else
+					T.truthy(effect.flat > 0 and effect.multiplier == 1, item.id)
+				end
 			end
 		end
 	end,
 
 	["buying everything in order goes from the start to the end income"] = function()
-		T.near(Income.perSecond("dorm", boughtFirst("dorm", 1)), Pricing.startIncome("dorm"))
-		T.near(Income.perSecond("dorm", boughtFirst("dorm", #Items.dorm)), Pricing.endIncome("dorm"), 1e-6)
+		for _, location in Locations do
+			local id, count = location.id, #Items[location.id]
+			T.near(Income.perSecond(id, boughtFirst(id, 1)), Pricing.startIncome(id), 1e-6, id)
+			local finish = Pricing.endIncome(id)
+			T.near(Income.perSecond(id, boughtFirst(id, count)), finish, finish * 1e-9, id)
+		end
 	end,
 
-	["saving for the whole dorm takes about its target time with active play"] = function()
-		local effects = Pricing.effects("dorm")
-		local seconds = 0
-		for index = 2, #Items.dorm do
-			local income = Income.perSecond("dorm", boughtFirst("dorm", index - 1))
-			seconds += effects[Items.dorm[index].id].cost / income
+	["saving for each location takes about its target time with active play"] = function()
+		for _, location in Locations do
+			local id, items = location.id, Items[location.id]
+			local effects = Pricing.effects(id)
+			local seconds = 0
+			for index = 2, #items do
+				local income = Income.perSecond(id, boughtFirst(id, index - 1))
+				seconds += effects[items[index].id].cost / income
+			end
+			local target = Balance.Pricing.locations[id].minutes * 60
+			T.near(seconds / Balance.Pricing.activeFactor, target, target * 0.05, id)
 		end
-		local target = Balance.Pricing.locations.dorm.minutes * 60
-		T.near(seconds / Balance.Pricing.activeFactor, target, target * 0.05)
+	end,
+
+	["moving on never feels like a step back"] = function()
+		for index = 2, #Locations do
+			local before, after = Locations[index - 1].id, Locations[index].id
+			T.truthy(Pricing.startIncome(after) >= Pricing.endIncome(before) * 0.99, after)
+		end
+	end,
+
+	["about ten hours from the dorm to a finished Ibiza"] = function()
+		local minutes = 0
+		for _, location in Locations do
+			minutes += Balance.Pricing.locations[location.id].minutes
+		end
+		T.truthy(minutes >= 8 * 60 and minutes <= 12 * 60, tostring(minutes))
 	end,
 
 	["a new player can afford the first paid button"] = function()
@@ -101,6 +131,11 @@ return {
 
 	["the register never loses money when income drops"] = function()
 		T.near(Register.fill(5000, 1, 1), 5000)
+	end,
+
+	["the bigger register holds more"] = function()
+		T.near(Register.capacity(2, true), Register.capacity(2) * Balance.Register.biggerCap)
+		T.near(Register.fill(Register.capacity(2), 2, 5, true), Register.capacity(2) + 10)
 	end,
 
 	-- Unlocks
@@ -152,9 +187,19 @@ return {
 		T.equal(Crowd.count("dorm", 1e9), 5, "capped at the range")
 	end,
 
+	["every location's crowd starts at its minimum and ends at its maximum"] = function()
+		for _, location in Locations do
+			local id = location.id
+			T.equal(Crowd.count(id, Pricing.startIncome(id)), location.guests.min, id)
+			T.equal(Crowd.count(id, Pricing.endIncome(id)), location.guests.max, id)
+		end
+	end,
+
 	["a location is complete once every item is bought"] = function()
 		T.equal(Unlocks.isComplete("dorm", boughtFirst("dorm", #Items.dorm - 1)), false)
 		T.equal(Unlocks.isComplete("dorm", boughtFirst("dorm", #Items.dorm)), true)
-		T.equal(Unlocks.nextLocation("dorm"), nil)
+		T.equal(Unlocks.nextLocation("dorm"), "house")
+		T.equal(Unlocks.nextLocation("club"), "ibiza")
+		T.equal(Unlocks.nextLocation("ibiza"), nil, "the world tour comes later")
 	end,
 }

@@ -8,7 +8,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Crowd = require(ReplicatedStorage.Shared.Economy.Crowd)
 local Income = require(ReplicatedStorage.Shared.Economy.Income)
 local Balance = require(ReplicatedStorage.Shared.Config.Balance)
+local Items = require(ReplicatedStorage.Shared.Config.Items)
 local SaveSchema = require(ReplicatedStorage.Shared.Data.SaveSchema)
+local Types = require(ReplicatedStorage.Shared.Types)
 
 -- A drop boost: its income multiplier until `endsAt` (server time).
 export type Boost = { multiplier: number, endsAt: number }
@@ -30,8 +32,15 @@ export type State = {
 	boost: Boost?,
 	speakerBlown: boolean,
 	goalsDone: { [string]: boolean }, -- the host character's goals finished
+	goalProgress: { [string]: number }, -- counted goals on their way, by goal id
+	djRestUntil: { [string]: number }, -- star DJ id -> when they can be booked again (os.time)
+	starDj: StarDjSet?, -- the star DJ playing a guest set right now
+	settings: SaveSchema.Settings,
 	stats: Stats,
 }
+
+-- A star DJ's guest set: who, their income multiplier, and when it ends (server time).
+export type StarDjSet = { djId: string, multiplier: number, endsAt: number }
 
 local PlayerState = {}
 
@@ -60,6 +69,10 @@ function PlayerState.create(player: Player, plot: Model, saved: SaveSchema.SaveD
 		boost = nil,
 		speakerBlown = false,
 		goalsDone = set(saved.goalsDone),
+		goalProgress = table.clone(saved.goalProgress),
+		djRestUntil = table.clone(saved.djRestUntil),
+		starDj = nil,
+		settings = table.clone(saved.settings),
 		stats = table.clone(saved.stats),
 	}
 	states[player] = state
@@ -89,6 +102,9 @@ function PlayerState.snapshot(state: State): SaveSchema.SaveData
 		goalsDone = list(state.goalsDone),
 		register = state.register,
 		stats = table.clone(state.stats),
+		goalProgress = table.clone(state.goalProgress),
+		djRestUntil = table.clone(state.djRestUntil),
+		settings = table.clone(state.settings),
 	}
 end
 
@@ -130,11 +146,17 @@ local function ids(set: { [string]: boolean }): string
 	return table.concat(list, ",")
 end
 
--- Mirrors the owned tracks and finished goals as Player attributes (comma-separated ids) for the
--- track shop and the goal tracker.
+-- Mirrors the owned tracks, finished goals and goal counts as Player attributes for the track
+-- shop and the goal tracker: comma-separated ids, and "id=count" pairs for the counts.
 function PlayerState.mirror(state: State)
 	state.player:SetAttribute("OwnedTracks", ids(state.ownedTracks))
 	state.player:SetAttribute("GoalsDone", ids(state.goalsDone))
+	local counts = {}
+	for goalId, count in state.goalProgress do
+		table.insert(counts, goalId .. "=" .. count)
+	end
+	table.sort(counts)
+	state.player:SetAttribute("GoalProgress", table.concat(counts, ","))
 end
 
 -- Tracks the player bought in the shop (the starter tracks don't count for the bonus).
@@ -148,18 +170,40 @@ function PlayerState.tracksBought(state: State): number
 	return count
 end
 
+-- Whether the player has bought an item with this feature at their current location.
+function PlayerState.hasFeature(state: State, feature: Types.Feature): boolean
+	local items: { Types.Item } = Items[state.locationId] or {}
+	for _, item in items do
+		if item.feature == feature and state.bought[item.id] then
+			return true
+		end
+	end
+	return false
+end
+
 -- Recomputes the plot's income from what it has built and what's going on, and its guest count.
+-- A star DJ's set counts like a boost (the stronger of the two applies; they never stack) and
+-- draws a bigger crowd.
 function PlayerState.updateIncome(state: State)
 	state.baseIncome = Income.perSecond(state.locationId, state.bought)
+	local boost = if state.boost then state.boost.multiplier else 1
+	local starDj = state.starDj
+	if starDj then
+		boost = math.max(boost, starDj.multiplier)
+	end
 	PlayerState.setIncome(
 		state,
 		Income.total(state.baseIncome, {
 			tracksBought = PlayerState.tracksBought(state),
-			boost = if state.boost then state.boost.multiplier else 1,
+			boost = boost,
 			speakerBlown = state.speakerBlown,
 		})
 	)
-	state.plot:SetAttribute("Guests", Crowd.count(state.locationId, state.baseIncome))
+	local guests = Crowd.count(state.locationId, state.baseIncome)
+	if starDj then
+		guests = math.ceil(guests * (1 + Balance.StarDjs.crowdBonus))
+	end
+	state.plot:SetAttribute("Guests", guests)
 end
 
 return PlayerState

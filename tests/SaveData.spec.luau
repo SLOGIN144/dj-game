@@ -67,6 +67,35 @@ return {
 		T.equal(data.stats.perfectDrops, 0)
 	end,
 
+	["a version 1 save loads with no goal progress, rested DJs and full volume"] = function()
+		local data =
+			SaveSchema.migrate({ version = 1, cash = 10, location = "house", boughtItems = { "house_djtable" } })
+		T.equal(data.version, 2)
+		T.equal(data.location, "house")
+		T.equal(next(data.goalProgress), nil)
+		T.equal(next(data.djRestUntil), nil)
+		T.equal(data.settings.musicVolume, 1)
+		T.equal(data.settings.sfxVolume, 1)
+	end,
+
+	["goal progress, DJ rests and settings load back, cleaned up"] = function()
+		local data = SaveSchema.migrate({
+			version = 2,
+			location = "house",
+			goalProgress = { house_perfect = 2.7, dorm_drop = 1, made_up = 4, house_fix = -3 },
+			djRestUntil = { dj_kiko = 1800000000, dj_nobody = 5 },
+			settings = { musicVolume = 0.4, sfxVolume = 7 },
+		})
+		T.equal(data.goalProgress.house_perfect, 2, "whole counts")
+		T.equal(data.goalProgress.dorm_drop, nil, "another location's goal")
+		T.equal(data.goalProgress.made_up, nil)
+		T.equal(data.goalProgress.house_fix, 0, "never negative")
+		T.equal(data.djRestUntil.dj_kiko, 1800000000)
+		T.equal(data.djRestUntil.dj_nobody, nil)
+		T.near(data.settings.musicVolume, 0.4)
+		T.equal(data.settings.sfxVolume, 1, "capped at full volume")
+	end,
+
 	["anything that isn't a table loads as a new player"] = function()
 		T.equal(SaveSchema.migrate("oops").cash, Balance.Start.cash)
 		T.equal(SaveSchema.migrate(5).location, Balance.Start.locationId)

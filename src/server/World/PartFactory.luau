@@ -49,6 +49,44 @@ function PartFactory.build(spec: Types.PartSpec, origin: CFrame, parent: Instanc
 	if spec.lightRole then
 		part:SetAttribute("LightRole", spec.lightRole)
 	end
+	if spec.fx then
+		part:SetAttribute("Fx", spec.fx)
+	end
+
+	local beam = spec.beam
+	if beam then
+		-- From the front face out along the part's look direction, fading as it goes.
+		local start = Instance.new("Attachment")
+		start.Name = "BeamStart"
+		start.Position = Vector3.new(0, 0, -spec.size.Z / 2)
+		start.Parent = part
+		local finish = Instance.new("Attachment")
+		finish.Name = "BeamEnd"
+		finish.Position = Vector3.new(0, 0, -spec.size.Z / 2 - beam.length)
+		finish.Parent = part
+		local ray = Instance.new("Beam")
+		ray.Attachment0 = start
+		ray.Attachment1 = finish
+		ray.Color = ColorSequence.new(spec.colour)
+		ray.Transparency = NumberSequence.new(0.7, 1)
+		ray.Width0 = beam.width
+		ray.Width1 = beam.width * 4
+		ray.FaceCamera = true
+		ray.LightEmission = 1
+		ray.LightInfluence = 0
+		ray.Segments = 1
+		ray.Parent = part
+	end
+
+	local smoke = spec.smoke
+	if smoke then
+		local haze = Instance.new("Smoke")
+		haze.Color = smoke.colour
+		haze.Opacity = smoke.opacity
+		haze.Size = smoke.size
+		haze.RiseVelocity = smoke.rise
+		haze.Parent = part
+	end
 
 	local text = spec.text
 	if text then

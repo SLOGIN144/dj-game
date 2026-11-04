@@ -166,6 +166,7 @@ end
 
 -- A location's room into `folder` at `at`: its imported shell model, or its blockout.
 local function buildRoom(folder: Instance, locationId: string, at: CFrame)
+	PartFactory.clearTerrain(folder)
 	folder:ClearAllChildren()
 	local art = Art.find(locationId, "Shell")
 	if art then
@@ -318,6 +319,7 @@ end
 -- register and the spawn back on the street and empties the register label.
 function PlotView.clear(plot: Model)
 	for _, name in { "Shell", "Items", "Pads", "Showcase" } do
+		PartFactory.clearTerrain(child(plot, name))
 		child(plot, name):ClearAllChildren()
 	end
 	for _, attribute in { "LocationId", "SpaceOrigin", "Guests", "Boost", "BoostEndsAt", "SpeakerBlown", "StarDj" } do

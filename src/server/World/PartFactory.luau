@@ -1,5 +1,7 @@
 --!strict
--- Builds one blockout Part from a PartSpec, placed relative to a plot's origin.
+-- Builds one blockout Part from a PartSpec, placed relative to a plot's origin. A spec with
+-- `terrain` fills its box with smooth terrain instead and leaves an invisible marker part, which
+-- `clearTerrain` uses to take the terrain away again.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -13,7 +15,40 @@ function PartFactory.place(spec: Types.PartSpec, origin: CFrame): CFrame
 	return origin * CFrame.new(spec.offset) * CFrame.Angles(math.rad(r.X), math.rad(r.Y), math.rad(r.Z))
 end
 
+local TERRAIN_MARKER = "TerrainFill"
+
+-- Fills the spec's box with terrain; the marker part keeps where it is.
+local function fillTerrain(spec: Types.PartSpec, material: Enum.Material, origin: CFrame, parent: Instance): Part
+	local cframe = PartFactory.place(spec, origin)
+	workspace.Terrain:FillBlock(cframe, spec.size, material)
+	local marker = Instance.new("Part")
+	marker.Name = TERRAIN_MARKER
+	marker.Anchored = true
+	marker.CanCollide = false
+	marker.CanQuery = false
+	marker.CanTouch = false
+	marker.Transparency = 1
+	marker.Size = spec.size
+	marker.CFrame = cframe
+	marker:SetAttribute(TERRAIN_MARKER, material.Name)
+	marker.Parent = parent
+	return marker
+end
+
+-- Takes away the terrain that parts built into `folder` filled (call before clearing it).
+function PartFactory.clearTerrain(folder: Instance)
+	for _, marker in folder:GetDescendants() do
+		if marker:IsA("BasePart") and marker:GetAttribute(TERRAIN_MARKER) ~= nil then
+			workspace.Terrain:FillBlock(marker.CFrame, marker.Size, Enum.Material.Air)
+		end
+	end
+end
+
 function PartFactory.build(spec: Types.PartSpec, origin: CFrame, parent: Instance): Part
+	local terrain = spec.terrain
+	if terrain then
+		return fillTerrain(spec, terrain, origin, parent)
+	end
 	local part = Instance.new("Part")
 	part.Anchored = true
 	part.Size = spec.size

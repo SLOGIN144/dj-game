@@ -342,6 +342,10 @@ end)
 
 local dataModel = Instance.new("DataModel")
 local workspace = dataModel:GetService("Workspace")
+-- Terrain: Lune's workspace has none, and can't fill voxels; the game's fills do nothing here.
+roblox.implementMethod("Terrain", "FillBlock", function() end)
+local terrain = Instance.new("Terrain")
+terrain.Parent = workspace
 
 -- Real instances for the scripts, so `script.Parent` and the services work like in Roblox; each
 -- ModuleScript remembers the file behind it.

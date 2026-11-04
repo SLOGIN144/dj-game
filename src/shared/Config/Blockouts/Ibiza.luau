@@ -200,10 +200,17 @@ end
 local function shell(): { Types.PartSpec }
 	local specs: { Types.PartSpec } = {
 		-- The beach and grass the venue stands on, the plaza and the sea
-		{ size = v(300, 1, 220), offset = v(0, -0.6, 0), colour = SAND, material = Enum.Material.Sand },
+		{ size = v(300, 1, 184), offset = v(0, -0.6, -18), colour = SAND, material = Enum.Material.Sand },
 		{ size = v(110, 1, 70), offset = v(0, -0.5, 5), colour = STONE, material = Enum.Material.Limestone },
-		{ size = v(700, 1, 420), offset = v(0, -1.2, 320), colour = rgb(40, 96, 168) },
-		{ size = v(700, 0.2, 3), offset = v(0, -0.7, 110), colour = rgb(250, 250, 255), collide = false },
+		-- The sea: terrain water over a sandy seabed, so it moves and catches the sunset.
+		{
+			size = v(700, 8, 420),
+			offset = v(0, -4.6, 284),
+			colour = rgb(40, 140, 160),
+			terrain = Enum.Material.Water,
+		},
+		{ size = v(700, 1, 420), offset = v(0, -9.1, 284), colour = rgb(214, 190, 140), material = Enum.Material.Sand },
+		{ size = v(700, 0.2, 3), offset = v(0, -0.7, 74), colour = rgb(250, 250, 255), collide = false },
 		-- Low white walls, open at the entrance and towards the beach
 		{ size = v(47, 3, 1), offset = v(31.5, 1.5, -30), colour = WHITE },
 		{ size = v(47, 3, 1), offset = v(-31.5, 1.5, -30), colour = WHITE },
@@ -214,14 +221,14 @@ local function shell(): { Types.PartSpec }
 		-- Headlands framing the bay
 		{
 			size = v(60, 40, 50),
-			offset = v(150, 10, 120),
+			offset = v(150, 10, 100),
 			rotation = v(0, 25, 0),
 			colour = rgb(96, 104, 84),
 			material = Enum.Material.Rock,
 		},
 		{
 			size = v(50, 30, 40),
-			offset = v(-150, 6, 130),
+			offset = v(-150, 6, 108),
 			rotation = v(0, -20, 0),
 			colour = rgb(100, 106, 88),
 			material = Enum.Material.Rock,

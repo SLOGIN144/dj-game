@@ -10,6 +10,7 @@ local NightLook = require(script.Parent.NightLook)
 local PlotLayout = require(ReplicatedStorage.Shared.Config.PlotLayout)
 local Skyline = require(script.Parent.Skyline)
 local StreetProps = require(script.Parent.StreetProps)
+local WaterLook = require(script.Parent.WaterLook)
 
 local Street = {}
 
@@ -49,6 +50,7 @@ end
 
 function Street.build(): { Model }
 	NightLook.apply()
+	WaterLook.apply()
 
 	local folder = Instance.new("Folder")
 	folder.Name = "Street"

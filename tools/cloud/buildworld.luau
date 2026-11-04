@@ -43,6 +43,10 @@ end)
 
 local dataModel = roblox.Instance.new("DataModel")
 local realWorkspace = dataModel:GetService("Workspace")
+-- Terrain: Lune's workspace has none, and can't fill voxels; fills are recorded as parts' boxes.
+roblox.implementMethod("Terrain", "FillBlock", function() end)
+local terrain = roblox.Instance.new("Terrain")
+terrain.Parent = realWorkspace
 
 -- The fake script tree from the sourcemap (for require), as in runspecs.luau.
 local Node = {}
@@ -311,6 +315,7 @@ for _, d in realWorkspace:GetDescendants() do
 			material = d.Material.Name,
 			transparency = d.Transparency,
 			light = if light then { light.Color.R, light.Color.G, light.Color.B, light.Range } else nil,
+			terrain = d:GetAttribute("TerrainFill"),
 		})
 	end
 end

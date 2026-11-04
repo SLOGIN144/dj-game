@@ -178,6 +178,9 @@ def render(camera, name, keep=None, exposure=1.0):
             continue
         if part.get("light"):
             lights.append(part)
+        if part.get("terrain") == "Water":
+            # Terrain water: draw its box as a turquoise surface
+            part = dict(part, color=[30 / 255, 150 / 255, 165 / 255], transparency=0.25, material="SmoothPlastic")
         alpha = 1 - part["transparency"]
         if alpha <= 0.05:
             continue

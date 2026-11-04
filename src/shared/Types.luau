@@ -109,6 +109,9 @@ export type PartSpec = {
 	beam: { length: number, width: number }?, -- a light beam out of the front face (moving heads, lasers)
 	smoke: { colour: Color3, opacity: number, size: number, rise: number }?, -- haze or smoke from the part
 	fx: DropFx?, -- the client fires this effect from the part on every drop
+	-- Fill the part's box with smooth terrain of this material instead (the sea: real water). An
+	-- invisible marker part keeps the box, so the terrain goes when its room is cleared.
+	terrain: Enum.Material?,
 }
 
 -- Payoffs a part fires on every drop, once its feature item is bought.

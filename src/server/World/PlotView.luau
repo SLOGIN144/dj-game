@@ -5,7 +5,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local Art = require(script.Parent.Art)
 local Blockouts = require(ReplicatedStorage.Shared.Config.Blockouts)
+local Bounds = require(ReplicatedStorage.Shared.Util.Bounds)
+local Builder = require(script.Parent.Builder)
+local Building = require(script.Parent.Building)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local PartFactory = require(script.Parent.PartFactory)
 local PlotLayout = require(ReplicatedStorage.Shared.Config.PlotLayout)
@@ -92,6 +96,16 @@ function PlotView.setup(plot: Model)
 		post.Parent = plot
 	end
 
+	-- A path from the sidewalk to the room, under the spawn and the buttons.
+	Builder.part(
+		"Walkway",
+		Vector3.new(12, 0.06, PlotLayout.size.Z / 2 - 6),
+		root * CFrame.new(0, 0.03, -PlotLayout.size.Z / 4 - 3),
+		Color3.fromRGB(86, 86, 100),
+		plot,
+		{ material = Enum.Material.Concrete }
+	)
+
 	local register = Instance.new("Part")
 	register.Name = "Register"
 	register.Anchored = true
@@ -99,6 +113,29 @@ function PlotView.setup(plot: Model)
 	register.CFrame = root * CFrame.new(PlotLayout.register + Vector3.new(0, 1.5, 0))
 	register.Color = Color3.fromRGB(30, 34, 40)
 	register.Parent = plot
+	-- Kiosk details (model sheet: plot_register): a glowing screen and a cash drawer.
+	local kiosk = register.CFrame
+	Builder.part(
+		"Screen",
+		Vector3.new(2.4, 1.2, 0.3),
+		kiosk * CFrame.new(0, 2, -0.6),
+		Color3.fromRGB(26, 29, 36),
+		register
+	)
+	Builder.neon(
+		"Display",
+		Vector3.new(1.8, 0.6, 0.1),
+		kiosk * CFrame.new(0, 2, -0.78),
+		Color3.fromRGB(120, 255, 160),
+		register
+	)
+	Builder.part(
+		"Drawer",
+		Vector3.new(2.4, 0.5, 0.2),
+		kiosk * CFrame.new(0, -0.2, -1.05),
+		Color3.fromRGB(58, 63, 74),
+		register
+	)
 	local registerGui = billboard(register, Vector2.new(6, 2.4), 3.2)
 	registerGui.Name = "AmountGui"
 	label("Amount", registerGui, UDim2.fromScale(0, 0), UDim2.fromScale(1, 0.65), REGISTER_TEXT).Text = "$0"
@@ -112,6 +149,13 @@ function PlotView.setup(plot: Model)
 		folder.Parent = plot
 	end
 	PlotView.setOwner(plot, nil)
+	PlotView.setBuilding(plot, "free")
+end
+
+-- The building behind the room, for a location or "free" (Config/Buildings).
+function PlotView.setBuilding(plot: Model, stageId: string)
+	local index = plot:GetAttribute("PlotIndex")
+	Building.show(plot, stageId, if typeof(index) == "number" then index * 31 else 1)
 end
 
 function PlotView.setOwner(plot: Model, player: Player?)
@@ -130,19 +174,32 @@ end
 
 function PlotView.setShell(plot: Model, locationId: string)
 	plot:SetAttribute("LocationId", locationId)
+	PlotView.setBuilding(plot, locationId)
 	local shell = child(plot, "Shell")
 	shell:ClearAllChildren()
+	local art = Art.find(locationId, "Shell")
+	if art then
+		Art.place(art, origin(plot), shell)
+		return
+	end
 	for _, spec in Blockouts[locationId].shell do
 		PartFactory.build(spec, origin(plot), shell)
 	end
 end
 
--- Builds a bought item's parts. With `animate`, each part rises into place and fades in.
+-- Builds a bought item: its imported model if there is one, else its blockout parts. With
+-- `animate`, blockout parts rise into place and fade in.
 function PlotView.showItem(plot: Model, locationId: string, itemId: string, animate: boolean)
+	local specs: { Types.PartSpec } = Blockouts[locationId].items[itemId] or {}
+	local art = Art.find(locationId, itemId)
+	if art then
+		local placed = Art.place(art, origin(plot) * CFrame.new(Bounds.anchor(specs)), child(plot, "Items"))
+		placed.Name = itemId
+		return
+	end
 	local model = Instance.new("Model")
 	model.Name = itemId
 	model.Parent = child(plot, "Items")
-	local specs: { Types.PartSpec } = Blockouts[locationId].items[itemId] or {}
 	for _, spec in specs do
 		local part = PartFactory.build(spec, origin(plot), model)
 		if animate then
@@ -164,6 +221,7 @@ function PlotView.clear(plot: Model)
 		plot:SetAttribute(attribute, nil)
 	end
 	PlotView.setRegister(plot, 0, false)
+	PlotView.setBuilding(plot, "free")
 end
 
 -- Replaces the button pads with one per entry, in the layout's button slots.

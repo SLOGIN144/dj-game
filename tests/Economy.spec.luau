@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 local Balance = require(Shared.Config.Balance)
+local Bounds = require(Shared.Util.Bounds)
 local Crowd = require(Shared.Economy.Crowd)
 local Items = require(Shared.Config.Items)
 local Format = require(Shared.Util.Format)
@@ -123,6 +124,18 @@ return {
 		T.near(Income.total(10, { tracksBought = 0, boost = 2, speakerBlown = false }), 20)
 		T.near(Income.total(10, { tracksBought = 0, boost = 1, speakerBlown = true }), 7.5)
 		T.near(Income.total(10, { tracksBought = 1, boost = 1.5, speakerBlown = true }), 10 * 1.05 * 1.5 * 0.75)
+	end,
+
+	-- Bounds (where imported art goes)
+	["an imported model goes at the bottom centre of its blockout"] = function()
+		local specs = {
+			{ size = Vector3.new(2, 1, 2), offset = Vector3.new(0, 0.5, 0), colour = Color3.new() },
+			{ size = Vector3.new(2, 2, 2), offset = Vector3.new(4, 3, 0), colour = Color3.new() },
+		}
+		local anchor = Bounds.anchor(specs)
+		T.near(anchor.X, 2)
+		T.near(anchor.Y, 0)
+		T.near(anchor.Z, 0)
 	end,
 
 	-- Crowd

@@ -1,19 +1,25 @@
 --!strict
 -- Builds the night street at server start: ground, road, sidewalks, street lamps and the plot
--- bases, with plots facing each other across the road. Returns the plots in order.
+-- bases, with plots facing each other across the road, plus the props, the airstrip at the far
+-- end and the skyline around it. Returns the plots in order.
 
-local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Config.Balance)
+local NightLook = require(script.Parent.NightLook)
 local PlotLayout = require(ReplicatedStorage.Shared.Config.PlotLayout)
+local Skyline = require(script.Parent.Skyline)
+local StreetProps = require(script.Parent.StreetProps)
 
 local Street = {}
 
 local ROAD_WIDTH = 30
 local SIDEWALK_WIDTH = 6
+local SIDEWALK_HEIGHT = 0.6
 local PLOT_GAP = 8 -- between neighbouring plots on the same side
 local LAMP_SPACING = 30
+local END_ROOM = 100 -- street beyond the plots, for the billboard at one end and the gate at the other
+local AIRSTRIP_LENGTH = 190
 
 local function part(name: string, size: Vector3, cframe: CFrame, colour: Color3, parent: Instance): Part
 	local p = Instance.new("Part")
@@ -29,13 +35,6 @@ local function part(name: string, size: Vector3, cframe: CFrame, colour: Color3,
 	return p
 end
 
-local function setNight()
-	Lighting.ClockTime = 0
-	Lighting.Brightness = 1
-	Lighting.Ambient = Color3.fromRGB(30, 30, 46)
-	Lighting.OutdoorAmbient = Color3.fromRGB(50, 50, 80)
-end
-
 local function buildLamp(x: number, z: number, parent: Instance)
 	part("LampPost", Vector3.new(0.6, 14, 0.6), CFrame.new(x, 7.6, z), Color3.fromRGB(40, 40, 48), parent)
 	local head = part("LampHead", Vector3.new(2, 0.6, 2), CFrame.new(x, 14.6, z), Color3.fromRGB(255, 220, 170), parent)
@@ -49,7 +48,7 @@ local function buildLamp(x: number, z: number, parent: Instance)
 end
 
 function Street.build(): { Model }
-	setNight()
+	NightLook.apply()
 
 	local folder = Instance.new("Folder")
 	folder.Name = "Street"
@@ -59,7 +58,7 @@ function Street.build(): { Model }
 
 	local plotSize = PlotLayout.size
 	local columns = math.ceil(Balance.World.plotCount / 2)
-	local length = columns * (plotSize.X + PLOT_GAP) + 60
+	local length = columns * (plotSize.X + PLOT_GAP) + END_ROOM
 	local depth = 2 * (ROAD_WIDTH / 2 + SIDEWALK_WIDTH + plotSize.Z) + 60
 
 	part("Ground", Vector3.new(length, 1, depth), CFrame.new(0, -0.5, 0), Color3.fromRGB(24, 26, 30), folder)
@@ -73,8 +72,8 @@ function Street.build(): { Model }
 		local z = side * (ROAD_WIDTH / 2 + SIDEWALK_WIDTH / 2)
 		local sidewalk = part(
 			"Sidewalk",
-			Vector3.new(length, 0.6, SIDEWALK_WIDTH),
-			CFrame.new(0, 0.3, z),
+			Vector3.new(length, SIDEWALK_HEIGHT, SIDEWALK_WIDTH),
+			CFrame.new(0, SIDEWALK_HEIGHT / 2, z),
 			Color3.fromRGB(70, 70, 76),
 			folder
 		)
@@ -105,6 +104,15 @@ function Street.build(): { Model }
 		plot.Parent = plotsFolder
 		table.insert(plots, plot)
 	end
+
+	StreetProps.build(folder, {
+		length = length,
+		roadWidth = ROAD_WIDTH,
+		sidewalkWidth = SIDEWALK_WIDTH,
+		sidewalkTop = SIDEWALK_HEIGHT,
+		airstripLength = AIRSTRIP_LENGTH,
+	})
+	Skyline.build(folder, length, depth, length / 2 + AIRSTRIP_LENGTH)
 
 	folder.Parent = workspace
 	return plots

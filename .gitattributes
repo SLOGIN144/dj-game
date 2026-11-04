@@ -1,3 +1,5 @@
 * text=auto eol=lf
 *.rbxl binary
 *.rbxm binary
+*.webp binary
+*.png binary

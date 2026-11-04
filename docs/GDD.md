@@ -226,6 +226,8 @@ Stylized geometry, realistic lighting. Shapes stay clean and simple; immersion c
 
 Concept images (the city, then each location, as an isometric series in one shared style) are references for layout, colour and mood, not for exact measurements.
 
+They live in `docs/concept/`: `street.webp` (the hub), `dorm.webp`, `house-party.webp`, `club.webp` and `ibiza.webp`. The content rules still win over them: the bottles behind the club's bar and the red cups at the house party become soda, energy drinks and water when those locations are built.
+
 ### Rules from Filip's reference photos
 
 - A dark room with one dominant colour per location, plus white beams as accents.

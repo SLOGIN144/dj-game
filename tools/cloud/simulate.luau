@@ -809,6 +809,7 @@ local function newCharacter(player)
 	local humanoid = Instance.new("Humanoid")
 	humanoid.MaxHealth = 100
 	humanoid.Health = 100
+	humanoid.MoveDirection = Vector3.zero
 	humanoid.Parent = model
 	model.PrimaryPart = rootPart
 	model.WorldPivot = rootPart.CFrame

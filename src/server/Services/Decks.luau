@@ -66,8 +66,8 @@ local function onPress(player: Player, pressTime: unknown, result: RemoteEvent, 
 		return
 	end
 	lastPress[player] = clock
-	if not atDecks(state) then
-		return
+	if not atDecks(state) or state.starDj then
+		return -- away from the decks, or a star DJ is playing them
 	end
 
 	local now = workspace:GetServerTimeNow()

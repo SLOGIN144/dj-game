@@ -17,6 +17,7 @@ local MixTimeline = require(ReplicatedStorage.Shared.Music.MixTimeline)
 local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
 local PlotMixes = require(script.Parent.PlotMixes)
 local Types = require(ReplicatedStorage.Shared.Types)
+local Volume = require(script.Parent.Volume)
 
 local PlotMusic = {}
 
@@ -243,7 +244,7 @@ local function update()
 	if plot:GetAttribute("SpeakerBlown") == true then
 		volume *= Balance.Music.blownVolume
 	end
-	engine:setMasterVolume(volume)
+	engine:setMasterVolume(volume * Volume.music())
 	engine:setMuffle(math.clamp(distance / 4, 0, 1), Balance.Music.muffleHz)
 end
 

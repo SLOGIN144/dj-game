@@ -1,13 +1,15 @@
 --!strict
--- The HUD: cash and income per second in a panel at the top, the active drop boost with its
--- timer under it, and a floating "+$" when the player collects from their register. Values come
--- from the server through Player attributes and the player's plot attributes.
+-- The HUD: cash and income per second in a panel at the top, the active drop boost or star DJ
+-- set with its timer under it, a banner while an event needs the player, and a floating "+$"
+-- when cash comes in. Values come from the server through Player attributes and the player's
+-- plot attributes.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local Booking = require(ReplicatedStorage.Shared.Economy.Booking)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local OwnPlot = require(script.Parent.Parent.Controllers.OwnPlot)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -18,6 +20,16 @@ local Hud = {}
 
 local FLOAT = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local REFRESH = 0.1 -- seconds between boost timer updates
+
+local NOTICES: { [string]: string } = {
+	speaker = "Your speaker blew! Hold Fix on it to repair it.",
+	vip = "A VIP is at the door! Go greet them.",
+	photographer = "A photographer is at the decks! Catch the next drop.",
+}
+local MISSED: { [string]: string } = {
+	vip = "The VIP got tired of waiting.",
+	photographer = "The photographer left. Next time!",
+}
 
 local gui: ScreenGui
 local floating = 0 -- floats on screen right now, so new ones stack under them
@@ -71,6 +83,16 @@ function Hud.start()
 	player:GetAttributeChangedSignal("Income"):Connect(update)
 	update()
 
+	-- A star DJ's set (it takes the boost's place: the two never stack).
+	local starSet =
+		Style.panel(gui, "StarSet", UDim2.fromOffset(300, 30), UDim2.new(0.5, 0, 0, 112), Vector2.new(0.5, 0))
+	local starStroke = Style.stroke(starSet, Style.GOLD)
+	starSet.Visible = false
+	local starText = Style.label(starSet, "Text", "", UDim2.new(1, -16, 1, -8), UDim2.fromOffset(8, 4), Style.GOLD)
+	local noticeText: TextLabel
+	local noticeBase = ""
+	local noticeEndsAt: number? = nil
+
 	-- The drop boost and how long it has left.
 	local boost = Style.panel(gui, "Boost", UDim2.fromOffset(170, 30), UDim2.new(0.5, 0, 0, 78), Vector2.new(0.5, 0))
 	Style.stroke(boost, Style.GOLD)
@@ -90,26 +112,57 @@ function Hud.start()
 		if boost.Visible then
 			boostText.Text = string.format("x%s BOOST  %ds", tostring(multiplier), math.ceil(left))
 		end
-	end)
-
-	-- A banner while an event needs the player (the blown speaker).
-	local notice = Style.panel(gui, "Notice", UDim2.fromOffset(330, 30), UDim2.new(0.5, 0, 0, 114), Vector2.new(0.5, 0))
-	Style.stroke(notice, Style.WARN)
-	notice.Visible = false
-	Style.label(
-		notice,
-		"Text",
-		"Your speaker blew! Hold Fix on it to repair it.",
-		UDim2.new(1, -16, 1, -8),
-		UDim2.fromOffset(8, 4),
-		Style.WARN
-	)
-	Remotes.event("EventNotice").OnClientEvent:Connect(function(kind: unknown, active: unknown)
-		if kind == "speaker" then
-			notice.Visible = active == true
-			Sfx.play(if active == true then "speakerBlow" else "fix")
+		-- A star DJ's guest set and how long it has left.
+		local djId = if plot then plot:GetAttribute("StarDj") else nil
+		local dj = if typeof(djId) == "string" then Booking.find(djId) else nil
+		local setLeft = if plot then number(plot:GetAttribute("StarDjEndsAt")) - workspace:GetServerTimeNow() else 0
+		starSet.Visible = dj ~= nil and setLeft > 0
+		if dj and starSet.Visible then
+			starText.Text = string.format(
+				"%s  x%s  %d:%02d",
+				string.upper(dj.name),
+				tostring(dj.multiplier),
+				math.floor(setLeft / 60),
+				math.ceil(setLeft) % 60
+			)
+			starStroke.Color = dj.colour
+			starText.TextColor3 = dj.colour
+		end
+		if noticeEndsAt then
+			local seconds = math.max(0, math.ceil(noticeEndsAt - os.clock()))
+			noticeText.Text = noticeBase .. "  " .. seconds .. "s"
 		end
 	end)
+
+	-- A banner while an event needs the player, with how long is left for the VIP and the photographer.
+	local notice = Style.panel(gui, "Notice", UDim2.fromOffset(380, 30), UDim2.new(0.5, 0, 0, 146), Vector2.new(0.5, 0))
+	Style.stroke(notice, Style.WARN)
+	notice.Visible = false
+	noticeText = Style.label(notice, "Text", "", UDim2.new(1, -16, 1, -8), UDim2.fromOffset(8, 4), Style.WARN)
+	Remotes.event("EventNotice").OnClientEvent
+		:Connect(function(kind: unknown, active: unknown, tip: unknown, seconds: unknown)
+			if typeof(kind) ~= "string" or not NOTICES[kind] then
+				return
+			end
+			if active == true then
+				noticeBase = NOTICES[kind]
+				noticeText.Text = noticeBase
+				noticeEndsAt = if typeof(seconds) == "number" and seconds > 0 then os.clock() + seconds else nil
+				notice.Visible = true
+				Sfx.play(if kind == "speaker" then "speakerBlow" elseif kind == "vip" then "vip" else "notice")
+				return
+			end
+			notice.Visible = false
+			noticeEndsAt = nil
+			local paid = typeof(tip) == "number" and tip > 0
+			if kind == "speaker" and paid then
+				Sfx.play("fix")
+			elseif kind == "photographer" and paid then
+				Sfx.play("camera")
+			elseif not paid and MISSED[kind] then
+				Hud.float(MISSED[kind], Style.MUTED)
+			end
+		end)
 
 	-- "+$X" rises from under the panel when collecting.
 	Remotes.event("Collected").OnClientEvent:Connect(function(amount: unknown)

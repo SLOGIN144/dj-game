@@ -113,6 +113,9 @@ local function enter()
 	if playing or not plot or not layout or not root or not character then
 		return
 	end
+	if plot:GetAttribute("StarDj") ~= nil then
+		return -- a star DJ has the decks
+	end
 	local origin = PlotSpace.origin(plot)
 	local stand = origin * layout.decks.stand
 	local items = plot:FindFirstChild("Items")
@@ -260,6 +263,17 @@ function Decks.start()
 			own:GetAttributeChangedSignal("LocationId"):Wait()
 		end
 		plot = own
+		-- While a star DJ plays, the decks are theirs: the owner steps away and the prompt says so.
+		own:GetAttributeChangedSignal("StarDj"):Connect(function()
+			local starPlaying = own:GetAttribute("StarDj") ~= nil
+			if starPlaying and playing then
+				leave()
+			end
+			if prompt then
+				prompt.ActionText = if starPlaying then "Star DJ playing" elseif playing then "Leave" else "Play"
+				prompt.Enabled = not starPlaying
+			end
+		end)
 		local items = own:WaitForChild("Items")
 		local function check(child: Instance)
 			local layout = blockout()

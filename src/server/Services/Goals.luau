@@ -1,9 +1,10 @@
 --!strict
 -- The location's host character (Config/Goals): their goals, rewards and lines. Goals listen to
--- what the other services report (collecting, buying, catching a drop, fixing the speaker, buying a
--- track), finish once each and pay their reward. The host's lines go to the player through "Say":
--- the intro for a new player, one per goal, the event lines, and "more is coming" after the
--- location's last button.
+-- what the other services report (collecting, buying, catching a drop, fixing the speaker,
+-- greeting a VIP, buying a track, booking a star DJ), count up where they need to, finish once
+-- each and pay their reward. The host's lines go to the player through "Say": the intro when
+-- they arrive at a location, one per goal, the event lines, and one after the location's last
+-- button.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,6 +17,7 @@ local PlayerState = require(script.Parent.PlayerState)
 local Progression = require(script.Parent.Progression)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Shop = require(script.Parent.Shop)
+local StarDjs = require(script.Parent.StarDjs)
 local TrackShop = require(script.Parent.TrackShop)
 local Travel = require(script.Parent.Travel)
 
@@ -88,17 +90,26 @@ function Goals.start()
 			happen(state, { kind = "perfect" })
 		end
 	end)
-	Events.started:connect(function(state: PlayerState.State)
+	Events.started:connect(function(state: PlayerState.State, kind: string)
 		local host = GoalsConfig[state.locationId]
-		if host then
-			say(state, host.lines.speakerBlown)
+		local line = if not host
+			then nil
+			elseif kind == "speaker" then host.lines.speakerBlown
+			elseif kind == "vip" then host.lines.vip
+			else host.lines.photographer
+		if line then
+			say(state, line)
 		end
 	end)
-	Events.fixed:connect(function(state: PlayerState.State)
-		happen(state, { kind = "fix" })
+	Events.fixed:connect(function(state: PlayerState.State, kind: string)
 		local host = GoalsConfig[state.locationId]
-		if host then
-			say(state, host.lines.speakerFixed)
+		if kind == "speaker" then
+			happen(state, { kind = "fix" })
+			if host then
+				say(state, host.lines.speakerFixed)
+			end
+		elseif kind == "vip" then
+			happen(state, { kind = "vip" })
 		end
 	end)
 	TrackShop.bought:connect(function(state: PlayerState.State)
@@ -108,6 +119,9 @@ function Goals.start()
 		-- The new host says hello, and tracks owned already count for their goals.
 		Goals.begin(state)
 		happen(state, { kind = "tracks", tracksOwned = TrackShop.owned(state) })
+	end)
+	StarDjs.booked:connect(function(state: PlayerState.State, djId: string)
+		happen(state, { kind = "book", djId = djId })
 	end)
 	Travel.locked:connect(function(state: PlayerState.State)
 		local host = GoalsConfig[state.locationId]

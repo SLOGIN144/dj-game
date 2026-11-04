@@ -146,17 +146,36 @@ local function ids(set: { [string]: boolean }): string
 	return table.concat(list, ",")
 end
 
--- Mirrors the owned tracks, finished goals and goal counts as Player attributes for the track
--- shop and the goal tracker: comma-separated ids, and "id=count" pairs for the counts.
+-- "key=value" pairs, sorted, for a Player attribute.
+local function pairsText(map: { [string]: number }): string
+	local list = {}
+	for key, value in map do
+		table.insert(list, key .. "=" .. tostring(value))
+	end
+	table.sort(list)
+	return table.concat(list, ",")
+end
+
+-- Mirrors what the client shows as Player attributes: the owned tracks and finished goals
+-- (comma-separated ids), goal counts and star DJ rests ("id=number" pairs), and the volume
+-- settings ("master=1,music=0.8,sfx=1").
 function PlayerState.mirror(state: State)
 	state.player:SetAttribute("OwnedTracks", ids(state.ownedTracks))
 	state.player:SetAttribute("GoalsDone", ids(state.goalsDone))
-	local counts = {}
-	for goalId, count in state.goalProgress do
-		table.insert(counts, goalId .. "=" .. count)
+	state.player:SetAttribute("GoalProgress", pairsText(state.goalProgress))
+	local rests = {}
+	for djId, at in state.djRestUntil do
+		rests[djId] = math.floor(at)
 	end
-	table.sort(counts)
-	state.player:SetAttribute("GoalProgress", table.concat(counts, ","))
+	state.player:SetAttribute("DjRest", pairsText(rests))
+	state.player:SetAttribute(
+		"Settings",
+		pairsText({
+			master = state.settings.masterVolume,
+			music = state.settings.musicVolume,
+			sfx = state.settings.sfxVolume,
+		})
+	)
 end
 
 -- Tracks the player bought in the shop (the starter tracks don't count for the bonus).

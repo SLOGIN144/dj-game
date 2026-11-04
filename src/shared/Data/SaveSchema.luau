@@ -36,7 +36,7 @@ export type SaveData = {
 	settings: Settings,
 }
 
-export type Settings = { musicVolume: number, sfxVolume: number } -- each 0..1
+export type Settings = { masterVolume: number, musicVolume: number, sfxVolume: number } -- each 0..1
 
 function SaveSchema.default(): SaveData
 	return {
@@ -51,7 +51,7 @@ function SaveSchema.default(): SaveData
 		stats = { perfectDrops = 0, goodDrops = 0, eventsDone = 0, playSeconds = 0 },
 		goalProgress = {},
 		djRestUntil = {},
-		settings = { musicVolume = 1, sfxVolume = 1 },
+		settings = { masterVolume = 1, musicVolume = 1, sfxVolume = 1 },
 	}
 end
 
@@ -118,6 +118,16 @@ local function isTrack(id: string): boolean
 	return false
 end
 
+-- Volume settings from anything (a save, a client's request): numbers 0..1, full volume when broken.
+function SaveSchema.cleanSettings(raw: any): Settings
+	local settings = if typeof(raw) == "table" then raw else {}
+	return {
+		masterVolume = math.min(1, number(settings.masterVolume, 1)),
+		musicVolume = math.min(1, number(settings.musicVolume, 1)),
+		sfxVolume = math.min(1, number(settings.sfxVolume, 1)),
+	}
+end
+
 -- Any loaded value as a valid current save. Unknown items, tracks and goals are dropped, the
 -- starter tracks are always owned, and broken numbers fall back to their defaults.
 function SaveSchema.sanitize(raw: { [string]: any }): SaveData
@@ -147,7 +157,6 @@ function SaveSchema.sanitize(raw: { [string]: any }): SaveData
 	end
 
 	local stats = if typeof(raw.stats) == "table" then raw.stats else {}
-	local settings = if typeof(raw.settings) == "table" then raw.settings else {}
 	return {
 		version = SaveSchema.VERSION,
 		cash = number(raw.cash, defaults.cash),
@@ -172,10 +181,7 @@ function SaveSchema.sanitize(raw: { [string]: any }): SaveData
 		},
 		goalProgress = counts(raw.goalProgress, isGoal, true),
 		djRestUntil = counts(raw.djRestUntil, isDj, false),
-		settings = {
-			musicVolume = math.min(1, number(settings.musicVolume, 1)),
-			sfxVolume = math.min(1, number(settings.sfxVolume, 1)),
-		},
+		settings = SaveSchema.cleanSettings(raw.settings),
 	}
 end
 

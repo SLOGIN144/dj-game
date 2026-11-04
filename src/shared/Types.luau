@@ -71,7 +71,7 @@ export type Location = {
 	space: Space,
 	spaceSize: Vector3, -- the area the location's music and events cover, around its origin
 	events: { EventKind }, -- the club events that can happen here
-	sky: string?, -- a look from Config/Skies while the player is here; the street's night when nil
+	sky: string?, -- a look from Config/Skies while the camera is in the location's room or venue
 }
 
 -- A fictional star DJ the player can book for a guest set (GDD: star DJs). Never a real DJ.

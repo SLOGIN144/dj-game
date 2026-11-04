@@ -18,6 +18,7 @@ local Locations: { Types.Location } = {
 		space = "plot",
 		spaceSize = Vector3.new(80, 40, 80),
 		events = { "speaker" },
+		sky = "dormRoom",
 	},
 	{
 		id = "house",
@@ -28,6 +29,7 @@ local Locations: { Types.Location } = {
 		space = "plot",
 		spaceSize = Vector3.new(80, 40, 80),
 		events = { "speaker", "photographer" },
+		sky = "houseParty",
 	},
 	{
 		id = "club",
@@ -38,6 +40,7 @@ local Locations: { Types.Location } = {
 		space = "plot",
 		spaceSize = Vector3.new(80, 40, 80),
 		events = { "speaker", "vip", "photographer" },
+		sky = "clubBasement",
 	},
 	{
 		id = "ibiza",

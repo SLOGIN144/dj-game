@@ -11,6 +11,7 @@ local Buildings = require(Shared.Config.Buildings)
 local Goals = require(Shared.Config.Goals)
 local Items = require(Shared.Config.Items)
 local Locations = require(Shared.Config.Locations)
+local Skies = require(Shared.Config.Skies)
 local StarDjs = require(Shared.Config.StarDjs)
 local T = require(script.Parent.TestUtil)
 
@@ -38,6 +39,7 @@ return {
 			T.truthy(#location.lights > 0 and location.lights[1] == location.colour, "lights start with the colour")
 			T.truthy(location.guests.min <= location.guests.max, "guest range")
 			T.truthy(#location.events > 0, "at least one event")
+			T.truthy(location.sky == nil or Skies[location.sky] ~= nil, "a real look for " .. id)
 		end
 	end,
 

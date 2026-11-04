@@ -1,14 +1,18 @@
 --!strict
 -- The sky and light where the player is (GDD: visual style and lighting). The server sets the
--- street's night look for everyone (World/NightLook); while this client's camera is at a venue
--- whose location has a sky of its own (Config/Skies: Ibiza's sunset), Lighting blends to it, and
--- back to the night on leaving. Lighting changes made on a client only affect that client.
+-- street's night look for everyone (World/NightLook). While this client's camera is inside a
+-- location's room (or the club a plot keeps on the street while its owner is away), or at a
+-- venue, Lighting blends to that location's look (Config/Skies: the dorm's purple, the club's
+-- deep blue, Ibiza's sunset), and back to the night on leaving. Lighting changes made on a
+-- client only affect that client.
 
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local Blockouts = require(ReplicatedStorage.Shared.Config.Blockouts)
+local Bounds = require(ReplicatedStorage.Shared.Util.Bounds)
 local PlotMixes = require(script.Parent.PlotMixes)
 local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
 local Skies = require(ReplicatedStorage.Shared.Config.Skies)
@@ -18,6 +22,7 @@ local Ambience = {}
 local BLEND = TweenInfo.new(2.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 local VENUE_REACH = 700 -- studs from a venue's origin that count as being there (beach and sea too)
 local CHECK_EVERY = 0.25
+local ROOM_MARGIN = 1 -- studs around a room's walls that still count as inside
 
 type Look = { lighting: { [string]: any }, haze: { [string]: any }, grade: { [string]: any } }
 
@@ -85,15 +90,48 @@ local function blend(look: Look, haze: Atmosphere?, grade: ColorCorrectionEffect
 	end
 end
 
--- The sky of the venue the camera is at, if any.
+-- Each location's room as a box in plot space (its shell's bounds), worked out once.
+local rooms: { [string]: { low: Vector3, high: Vector3 } } = {}
+local function insideRoom(locationId: string, origin: CFrame, position: Vector3): boolean
+	local room = rooms[locationId]
+	if not room then
+		local blockout = Blockouts[locationId]
+		if not blockout then
+			return false
+		end
+		local low, high = Bounds.ofSpecs(blockout.shell)
+		room = { low = low, high = high }
+		rooms[locationId] = room
+	end
+	local at = origin:PointToObjectSpace(position)
+	return at.X >= room.low.X - ROOM_MARGIN
+		and at.X <= room.high.X + ROOM_MARGIN
+		and at.Z >= room.low.Z - ROOM_MARGIN
+		and at.Z <= room.high.Z + ROOM_MARGIN
+end
+
+local function skyOf(locationId: string?): string?
+	local location = PlotSpace.location(locationId)
+	return if location then location.sky else nil
+end
+
+-- The look for where the camera is: a venue's, a room's, or nil for the street's night.
 local function skyHere(position: Vector3): string?
 	for _, plot in PlotMixes.plots() do
+		local locationId = PlotSpace.locationId(plot)
+		if not locationId then
+			continue
+		end
 		if PlotSpace.away(plot) then
-			local location = PlotSpace.location(PlotSpace.locationId(plot))
-			local origin = PlotSpace.origin(plot)
-			if location and location.sky and (position - origin.Position).Magnitude <= VENUE_REACH then
-				return location.sky
+			if (position - PlotSpace.origin(plot).Position).Magnitude <= VENUE_REACH then
+				return skyOf(locationId)
 			end
+			local shown = PlotSpace.showcaseFor(locationId)
+			if shown and insideRoom(shown, plot:GetPivot(), position) then
+				return skyOf(shown)
+			end
+		elseif insideRoom(locationId, plot:GetPivot(), position) then
+			return skyOf(locationId)
 		end
 	end
 	return nil

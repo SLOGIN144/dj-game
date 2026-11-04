@@ -1381,6 +1381,19 @@ local okSession, sessionError = pcall(function()
 	remotes.SetSettings.OnServerEvent:Fire(filip, 0.5, 0.8, 2)
 	advance(0.3)
 	check(state.settings.masterVolume == 0.5 and state.settings.sfxVolume == 1, "settings are saved, cleaned")
+	-- The graphics switch in the client's settings panel.
+	local graphicsButton = findDescendant(gui("Settings"), function(d)
+		return d.Name == "Graphics" and d:IsA("GuiButton")
+	end)
+	if check(graphicsButton ~= nil, "the settings panel has a graphics switch") then
+		graphicsButton.Activated:Fire()
+		advance(3)
+		check(state.settings.lowGraphics == true, "low graphics is saved on the server")
+		check(#workspace.LocalGuests:GetChildren() <= 15, "low graphics draws at most 15 guests")
+		graphicsButton.Activated:Fire()
+		advance(3)
+		check(state.settings.lowGraphics == false, "high graphics comes back")
+	end
 
 	print("== leave and rejoin")
 	local cashBefore, boughtBefore = state.cash, 0

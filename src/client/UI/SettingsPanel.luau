@@ -1,13 +1,14 @@
 --!strict
--- The settings panel (GDD: settings: master volume, plus separate music and SFX sliders). A
--- small button at the top right opens it; the sliders change the volume at once
--- (Controllers/Volume), and the server saves them with the player's club.
+-- The settings panel (GDD: master volume, plus separate music and SFX sliders, and a
+-- graphics-quality setting). A small button at the top right opens it; the sliders and the
+-- graphics switch apply at once (Controllers/Preferences), and the server saves them with the
+-- player's club.
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
 local Style = require(script.Parent.Style)
-local Volume = require(script.Parent.Parent.Controllers.Volume)
+local Preferences = require(script.Parent.Parent.Controllers.Preferences)
 
 local SettingsPanel = {}
 
@@ -59,9 +60,9 @@ local function slider(parent: Instance, key: string, text: string, y: number): S
 	local dragging = false
 	local function setFrom(x: number)
 		local level = math.clamp((x - bar.AbsolutePosition.X) / math.max(1, bar.AbsoluteSize.X), 0, 1)
-		local levels = Volume.get();
+		local levels = Preferences.get();
 		(levels :: any)[key] = level
-		Volume.set(levels)
+		Preferences.set(levels)
 		draw(level)
 	end
 	local function isPress(input: InputObject): boolean
@@ -104,7 +105,7 @@ function SettingsPanel.start()
 	local panel = Style.panel(
 		gui,
 		"Panel",
-		UDim2.fromOffset(360, 56 + 40 * #SLIDERS),
+		UDim2.fromOffset(360, 100 + 40 * #SLIDERS),
 		UDim2.new(1, -12, 0, 52),
 		Vector2.new(1, 0)
 	)
@@ -118,11 +119,31 @@ function SettingsPanel.start()
 	for index, entry in SLIDERS do
 		sliders[entry.key] = slider(panel, entry.key, entry.label, 48 + (index - 1) * 40)
 	end
+	-- The graphics switch: high, or low (fewer guests, no beams, fewer particles).
+	local graphicsY = 48 + #SLIDERS * 40
+	local graphicsLabel = Style.label(
+		panel,
+		"GraphicsLabel",
+		"Graphics",
+		UDim2.new(0.36, -16, 0, 22),
+		UDim2.fromOffset(16, graphicsY + 6)
+	)
+	graphicsLabel.TextXAlignment = Enum.TextXAlignment.Left
+	local graphics =
+		Style.button(panel, "Graphics", "High", UDim2.fromOffset(120, 34), UDim2.new(0.36, 0, 0, graphicsY))
+	graphics.Activated:Connect(function()
+		local levels = Preferences.get()
+		levels.low = not levels.low
+		Preferences.set(levels)
+		graphics.Text = if levels.low then "Low" else "High"
+	end)
+
 	local function drawAll()
-		local levels = Volume.get() :: any
+		local levels = Preferences.get() :: any
 		for key, entry in sliders do
 			entry.draw(levels[key])
 		end
+		graphics.Text = if levels.low then "Low" else "High"
 	end
 
 	open.Activated:Connect(function()

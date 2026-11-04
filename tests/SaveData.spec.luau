@@ -84,7 +84,7 @@ return {
 			location = "house",
 			goalProgress = { house_perfect = 2.7, dorm_drop = 1, made_up = 4, house_fix = -3 },
 			djRestUntil = { dj_kiko = 1800000000, dj_nobody = 5 },
-			settings = { masterVolume = 0 / 0, musicVolume = 0.4, sfxVolume = 7 },
+			settings = { masterVolume = 0 / 0, musicVolume = 0.4, sfxVolume = 7, lowGraphics = "yes" },
 		})
 		T.equal(data.goalProgress.house_perfect, 2, "whole counts")
 		T.equal(data.goalProgress.dorm_drop, nil, "another location's goal")
@@ -95,6 +95,7 @@ return {
 		T.near(data.settings.musicVolume, 0.4)
 		T.equal(data.settings.sfxVolume, 1, "capped at full volume")
 		T.equal(data.settings.masterVolume, 1, "NaN falls back to full volume")
+		T.equal(data.settings.lowGraphics, false, "only true turns low graphics on")
 	end,
 
 	["anything that isn't a table loads as a new player"] = function()

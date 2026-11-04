@@ -23,7 +23,7 @@ local SettingsPanel = require(script.Parent.UI.SettingsPanel)
 local StarDjView = require(script.Parent.Controllers.StarDjView)
 local Style = require(script.Parent.UI.Style)
 local TrackShop = require(script.Parent.UI.TrackShop)
-local Volume = require(script.Parent.Controllers.Volume)
+local Preferences = require(script.Parent.Controllers.Preferences)
 
 -- The UI accent follows the player's location.
 task.spawn(function()
@@ -36,7 +36,7 @@ task.spawn(function()
 	update()
 end)
 
-Volume.start()
+Preferences.start()
 Hud.start()
 Dialogue.start()
 PadLabels.start()

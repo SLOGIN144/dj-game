@@ -18,6 +18,7 @@ local Locations = require(ReplicatedStorage.Shared.Config.Locations)
 local PlotMixes = require(script.Parent.PlotMixes)
 local PlotMusic = require(script.Parent.PlotMusic)
 local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
+local Preferences = require(script.Parent.Preferences)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Sfx = require(script.Parent.Sfx)
 
@@ -30,6 +31,7 @@ local LATE = 0.4 -- seconds after a drop it still fires (a frame hitch shouldn't
 local FX_FOLDERS = { "Items", "Showcase" }
 local WHITE = Color3.new(1, 1, 1)
 local ROCKET = TweenInfo.new(1.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local LOW_SHARE = 0.4 -- particles drawn with low graphics, as a share of the full count
 
 local folder: Folder
 local lastDrop: { [Model]: number } = {} -- per plot, the time of the last drop that fired its payoffs
@@ -56,6 +58,9 @@ local function holder(name: string, cframe: CFrame, size: Vector3, seconds: numb
 end
 
 local function confettiBurst(at: Part, colours: { Color3 }, count: number, speed: NumberRange)
+	if Preferences.lowGraphics() then
+		count = math.ceil(count * LOW_SHARE)
+	end
 	for _, colour in colours do
 		local emitter = Instance.new("ParticleEmitter")
 		emitter.Rate = 0
@@ -108,7 +113,7 @@ end
 local function co2(part: BasePart)
 	local at = holder("CO2", part.CFrame * CFrame.new(0, part.Size.Y / 2, 0), Vector3.new(0.6, 0.2, 0.6), 3)
 	local emitter = Instance.new("ParticleEmitter")
-	emitter.Rate = 140
+	emitter.Rate = if Preferences.lowGraphics() then 140 * LOW_SHARE else 140
 	emitter.Color = ColorSequence.new(Color3.fromRGB(235, 240, 255))
 	emitter.Transparency = NumberSequence.new({
 		NumberSequenceKeypoint.new(0, 0.2),
@@ -163,7 +168,7 @@ local function firework(part: BasePart, colour: Color3)
 		sparks.Acceleration = Vector3.new(0, -6, 0)
 		sparks.Drag = 1.5
 		sparks.Parent = rocket
-		sparks:Emit(90)
+		sparks:Emit(if Preferences.lowGraphics() then math.ceil(90 * LOW_SHARE) else 90)
 		local flash = Instance.new("PointLight")
 		flash.Color = colour
 		flash.Range = 60

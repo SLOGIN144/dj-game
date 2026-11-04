@@ -14,6 +14,7 @@ local Locations = require(ReplicatedStorage.Shared.Config.Locations)
 local MixTimeline = require(ReplicatedStorage.Shared.Music.MixTimeline)
 local LedWall = require(script.Parent.LedWall)
 local PlotMixes = require(script.Parent.PlotMixes)
+local Preferences = require(script.Parent.Preferences)
 local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
 local TrackInfo = require(ReplicatedStorage.Shared.Music.TrackInfo)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -212,6 +213,7 @@ local function drive(plot: Model, entry: PlotLights, now: number)
 	end
 
 	local blown = plot:GetAttribute("SpeakerBlown") == true
+	local low = Preferences.lowGraphics() -- no beams on low graphics
 	local locationId = PlotSpace.locationId(plot)
 	local function wash(colours: { Color3 }): Color3
 		if kind == "drop" then
@@ -252,7 +254,7 @@ local function drive(plot: Model, entry: PlotLights, now: number)
 				amount = 0.15
 			end
 			-- A beam sweeps: wide on the drop, a slow sway otherwise. Neighbours mirror each other.
-			if item.beam and os.clock() - item.foundAt > 1 then
+			if item.beam and not low and os.clock() - item.foundAt > 1 then
 				item.pivot = item.pivot or item.part.CFrame
 				local side = if item.index % 2 == 0 then 1 else -1
 				local reach = if kind == "drop" then 1 elseif kind == "build" then 0.5 + 0.4 * through else 0.25
@@ -300,6 +302,7 @@ local function drive(plot: Model, entry: PlotLights, now: number)
 		end
 		local beam = item.beam
 		if beam then
+			beam.Enabled = not low
 			beam.Color = ColorSequence.new(tint:Lerp(WHITE, blast * 0.6))
 			beam.Brightness = item.beamBrightness * (0.2 + amount) * (1 + blast)
 		end

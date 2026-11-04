@@ -20,7 +20,7 @@ local NAMES = {
 	"OpenBoard", -- server -> owner: open the star DJ booking board
 	"BookDj", -- client -> server: book a star DJ
 	"DjNotice", -- server -> owner: a booking was refused, or a guest set started or ended
-	"SetSettings", -- client -> server: the player's volume settings changed
+	"SetSettings", -- client -> server: the player's settings changed (volumes, low graphics)
 	"DevCheat", -- client -> server, Studio only: a testing shortcut (Services/DevTools)
 }
 

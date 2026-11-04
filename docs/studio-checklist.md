@@ -106,6 +106,7 @@ Filip's playtest.
 
 - [ ] The billboard at the near end of the street lists the players in the server by total earned, with their location, every 5 s.
 - [ ] Settings (top right): the master, music and SFX sliders change the volume at once. Rejoin and they're as you left them.
+- [ ] Graphics: Low draws at most 15 guests, switches the beams off and thins the confetti, CO2 and fireworks; High brings them back.
 
 ## 11. Saving
 
@@ -123,4 +124,3 @@ Filip's playtest.
 - Every sound effect ID in `Config/Sounds.luau` is 0 (silent) until Filip picks Creator Store sounds.
 - Guests, star DJs, the VIP and the photographer are figures built from parts. R15 rigs with dance animations need animation IDs.
 - Nothing is tuned by ear or eye yet: the blend gains, the street muffle, light levels, the sunset, beams and the guests' moves.
-- There's no graphics-quality setting yet.

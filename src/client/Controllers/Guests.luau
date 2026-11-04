@@ -6,7 +6,8 @@
 -- that rise through the build and go up on the drop, and a jump on drops and Perfect presses.
 -- Every client builds the same figures from the same seeds, so visitors see the same friends.
 -- Only plots in view get figures, nearest first, within a budget for the whole client
--- (Balance.Guests: about 40 on PC, 15 on mobile), so a big crowd shows its front rows.
+-- (Balance.Guests: about 40 on PC, 15 on mobile or with low graphics), so a big crowd shows its
+-- front rows.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -17,6 +18,7 @@ local Balance = require(ReplicatedStorage.Shared.Config.Balance)
 local Blockouts = require(ReplicatedStorage.Shared.Config.Blockouts)
 local PlotSpace = require(ReplicatedStorage.Shared.Util.PlotSpace)
 local PlotMixes = require(script.Parent.PlotMixes)
+local Preferences = require(script.Parent.Preferences)
 local PlotMusic = require(script.Parent.PlotMusic)
 local Sfx = require(script.Parent.Sfx)
 local TrackInfo = require(ReplicatedStorage.Shared.Music.TrackInfo)
@@ -185,8 +187,10 @@ local function animate(
 	local origin = PlotSpace.origin(plot)
 	local _, main = PlotMixes.at(plot, now)
 	local mix = PlotMixes.get(plot)
+	-- Bigger moves during a drop boost or a star DJ's set (GDD: guests' reactions).
 	local boost = plot:GetAttribute("Boost")
-	local bigger = if typeof(boost) == "number" and boost > 1 then 1.3 else 1
+	local starSet = plot:GetAttribute("StarDj") ~= nil
+	local bigger = if starSet or (typeof(boost) == "number" and boost > 1) then 1.3 else 1
 
 	-- A jump on a drop's first beat, and on a Perfect press.
 	local jumpAge = os.clock() - entry.jumpAt
@@ -279,7 +283,6 @@ function Guests.start()
 		plots[plot] = { guests = {}, jumpAt = -math.huge, settled = false, wanted = 0, locationId = nil }
 	end
 	local mobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-	local budget = if mobile then Balance.Guests.renderBudgetMobile else Balance.Guests.renderBudget
 
 	RunService.RenderStepped:Connect(function()
 		local camera = workspace.CurrentCamera
@@ -304,7 +307,8 @@ function Guests.start()
 			return a.distance < b.distance
 		end)
 		local allowed: { [Model]: number } = {}
-		local left = budget
+		local small = mobile or Preferences.lowGraphics()
+		local left = if small then Balance.Guests.renderBudgetMobile else Balance.Guests.renderBudget
 		for _, seen in inView do
 			allowed[seen.plot] = left
 			local locationId = PlotSpace.locationId(seen.plot)

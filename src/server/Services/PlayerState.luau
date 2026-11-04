@@ -158,7 +158,7 @@ end
 
 -- Mirrors what the client shows as Player attributes: the owned tracks and finished goals
 -- (comma-separated ids), goal counts and star DJ rests ("id=number" pairs), and the volume
--- settings ("master=1,music=0.8,sfx=1").
+-- settings ("low=0,master=1,music=0.8,sfx=1").
 function PlayerState.mirror(state: State)
 	state.player:SetAttribute("OwnedTracks", ids(state.ownedTracks))
 	state.player:SetAttribute("GoalsDone", ids(state.goalsDone))
@@ -171,6 +171,7 @@ function PlayerState.mirror(state: State)
 	state.player:SetAttribute(
 		"Settings",
 		pairsText({
+			low = if state.settings.lowGraphics then 1 else 0,
 			master = state.settings.masterVolume,
 			music = state.settings.musicVolume,
 			sfx = state.settings.sfxVolume,

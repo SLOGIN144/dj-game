@@ -5,7 +5,7 @@
 -- a new version and a migration step here.
 --   Version 1 (approved by Filip on 2026-11-04): cash, location, items, tracks, goals, register.
 --   Version 2 (2026-11-04, autonomous run; see docs/decisions.md): counted goal progress, star DJ
---   rest times and the volume settings. Version 1 saves load with all three empty.
+--   rest times and the settings (volumes, low graphics). Version 1 saves load with all three empty.
 
 local Balance = require(script.Parent.Parent.Config.Balance)
 local Goals = require(script.Parent.Parent.Config.Goals)
@@ -36,7 +36,8 @@ export type SaveData = {
 	settings: Settings,
 }
 
-export type Settings = { masterVolume: number, musicVolume: number, sfxVolume: number } -- each 0..1
+-- Volumes are 0..1; low graphics draws fewer guests, no beams and fewer particles.
+export type Settings = { masterVolume: number, musicVolume: number, sfxVolume: number, lowGraphics: boolean }
 
 function SaveSchema.default(): SaveData
 	return {
@@ -51,7 +52,7 @@ function SaveSchema.default(): SaveData
 		stats = { perfectDrops = 0, goodDrops = 0, eventsDone = 0, playSeconds = 0 },
 		goalProgress = {},
 		djRestUntil = {},
-		settings = { masterVolume = 1, musicVolume = 1, sfxVolume = 1 },
+		settings = { masterVolume = 1, musicVolume = 1, sfxVolume = 1, lowGraphics = false },
 	}
 end
 
@@ -125,6 +126,7 @@ function SaveSchema.cleanSettings(raw: any): Settings
 		masterVolume = math.min(1, number(settings.masterVolume, 1)),
 		musicVolume = math.min(1, number(settings.musicVolume, 1)),
 		sfxVolume = math.min(1, number(settings.sfxVolume, 1)),
+		lowGraphics = settings.lowGraphics == true,
 	}
 end
 

@@ -28,12 +28,26 @@ function PartFactory.build(spec: Types.PartSpec, origin: CFrame, parent: Instanc
 
 	local light = spec.light
 	if light then
-		local pointLight = Instance.new("PointLight")
-		pointLight.Color = light.colour or spec.colour
-		pointLight.Brightness = light.brightness
-		pointLight.Range = light.range
-		pointLight.Shadows = false
-		pointLight.Parent = part
+		local instance: Light
+		if light.spot then
+			local spotLight = Instance.new("SpotLight")
+			spotLight.Face = Enum.NormalId.Front
+			spotLight.Angle = light.spot
+			spotLight.Range = light.range
+			instance = spotLight
+		else
+			local pointLight = Instance.new("PointLight")
+			pointLight.Range = light.range
+			instance = pointLight
+		end
+		instance.Color = light.colour or spec.colour
+		instance.Brightness = light.brightness
+		instance.Shadows = false
+		instance.Parent = part
+	end
+
+	if spec.lightRole then
+		part:SetAttribute("LightRole", spec.lightRole)
 	end
 
 	local text = spec.text

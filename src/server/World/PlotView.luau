@@ -129,6 +129,7 @@ function PlotView.spawn(plot: Model): SpawnLocation
 end
 
 function PlotView.setShell(plot: Model, locationId: string)
+	plot:SetAttribute("LocationId", locationId)
 	local shell = child(plot, "Shell")
 	shell:ClearAllChildren()
 	for _, spec in Blockouts[locationId].shell do
@@ -154,10 +155,13 @@ function PlotView.showItem(plot: Model, locationId: string, itemId: string, anim
 	end
 end
 
--- Removes the room, the items and the pads, and empties the register label.
+-- Removes the room, the items and the pads, the plot's state attributes, and empties the register label.
 function PlotView.clear(plot: Model)
 	for _, name in { "Shell", "Items", "Pads" } do
 		child(plot, name):ClearAllChildren()
+	end
+	for _, attribute in { "LocationId", "Guests", "Boost", "BoostEndsAt", "SpeakerBlown" } do
+		plot:SetAttribute(attribute, nil)
 	end
 	PlotView.setRegister(plot, 0, false)
 end

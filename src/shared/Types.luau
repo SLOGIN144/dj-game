@@ -52,8 +52,14 @@ export type Location = {
 	id: string,
 	name: string,
 	colour: Color3, -- neon accent for this location's UI and lights
+	lights: { Color3 }, -- the light show's palette; the first is the location's own colour
 	guests: { min: number, max: number }, -- guests shown, from no income to a finished location
 }
+
+-- What the client's light show does with a part on the beat (see Controllers/LightShow).
+--   led: the main colour wash; speaker: pumps on every kick; spot: alternating fixtures that
+--   strobe on drops; disco: spins and sparkles; screen: flickers; neon: a sign that flashes on drops.
+export type LightRole = "led" | "speaker" | "spot" | "disco" | "screen" | "neon"
 
 -- One blockout part, placed relative to a plot's origin (centre of the plot base's top face,
 -- local -Z towards the street).
@@ -66,14 +72,29 @@ export type PartSpec = {
 	rotation: Vector3?, -- degrees around X, Y, Z
 	transparency: number?,
 	collide: boolean?, -- true when nil
-	light: { colour: Color3?, brightness: number, range: number }?, -- a PointLight in the part
+	-- A PointLight in the part, or a SpotLight shining out of its front (-Z) face with `spot`.
+	light: { colour: Color3?, brightness: number, range: number, spot: number? }?,
 	text: { text: string, colour: Color3 }?, -- glowing text on the part's front (-Z) face
+	lightRole: LightRole?, -- the client's light show drives this part on the beat
 }
 
--- A location's look: the room that's always there, and what each bought item adds.
+-- A location's look: the room that's always there, what each bought item adds, and where the
+-- guests, the decks and the event props are. Positions are relative to the plot origin.
 export type Blockout = {
 	shell: { PartSpec },
 	items: { [string]: { PartSpec } },
+	guests: {
+		entrance: Vector3, -- where friends walk in from
+		spots: { Vector3 }, -- where they dance, in the order they arrive
+		lookAt: Vector3, -- what they face (the DJ)
+	},
+	decks: {
+		itemId: string, -- the item that is the DJ booth
+		stand: Vector3, -- where the DJ stands, on the floor
+		camera: Vector3, -- the shot while playing
+		cameraLookAt: Vector3,
+	},
+	speakerItem: string?, -- the item the blown speaker event happens to
 }
 
 -- What one item costs and does to its plot's income.

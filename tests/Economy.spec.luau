@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 local Balance = require(Shared.Config.Balance)
+local Crowd = require(Shared.Economy.Crowd)
 local Items = require(Shared.Config.Items)
 local Format = require(Shared.Util.Format)
 local Income = require(Shared.Economy.Income)
@@ -113,6 +114,29 @@ return {
 		T.equal(Unlocks.canBuy("dorm", bought, Items.dorm[2].id), true)
 		T.equal(Unlocks.canBuy("dorm", bought, Items.dorm[#Items.dorm].id), false)
 		T.equal(Unlocks.canBuy("dorm", bought, Items.dorm[1].id), false)
+	end,
+
+	["bought tracks, boosts and a blown speaker change the income"] = function()
+		local none = { tracksBought = 0, boost = 1, speakerBlown = false }
+		T.near(Income.total(10, none), 10)
+		T.near(Income.total(10, { tracksBought = 2, boost = 1, speakerBlown = false }), 11)
+		T.near(Income.total(10, { tracksBought = 0, boost = 2, speakerBlown = false }), 20)
+		T.near(Income.total(10, { tracksBought = 0, boost = 1, speakerBlown = true }), 7.5)
+		T.near(Income.total(10, { tracksBought = 1, boost = 1.5, speakerBlown = true }), 10 * 1.05 * 1.5 * 0.75)
+	end,
+
+	-- Crowd
+	["the crowd grows from none to the location's maximum as the dorm is built"] = function()
+		T.equal(Crowd.count("dorm", 0), 0, "an empty room")
+		T.equal(Crowd.count("dorm", Income.perSecond("dorm", boughtFirst("dorm", 1))), 0, "just the laptop")
+		T.equal(Crowd.count("dorm", Income.perSecond("dorm", boughtFirst("dorm", #Items.dorm))), 5, "everything")
+		local previous = 0
+		for count = 1, #Items.dorm do
+			local guests = Crowd.count("dorm", Income.perSecond("dorm", boughtFirst("dorm", count)))
+			T.truthy(guests >= previous, "never fewer guests after a purchase")
+			previous = guests
+		end
+		T.equal(Crowd.count("dorm", 1e9), 5, "capped at the range")
 	end,
 
 	["a location is complete once every item is bought"] = function()

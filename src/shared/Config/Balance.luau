@@ -68,6 +68,29 @@ Balance.Pricing = {
 	} :: { [string]: { minutes: number, incomeGrowth: number, startIncome: number? } },
 }
 
+-- The drop bonus at the decks. A new boost replaces a weaker one; boosts never stack.
+Balance.Boost = {
+	perfect = { multiplier = 2, seconds = 30 },
+	good = { multiplier = 1.5, seconds = 20 },
+	lagAllowance = 0.4, -- seconds the server allows between a press and its message arriving
+	decksRange = 8, -- studs from the DJ spot within which the owner counts as at the decks
+}
+
+Balance.Tracks = {
+	bonusPerTrack = 0.05, -- each track bought in the shop adds this share to the plot's income, for good
+}
+
+-- Club events, one at a time. The prototype has only the blown speaker.
+Balance.Events = {
+	minSeconds = 180, -- seconds of the owner being on their plot between two events
+	maxSeconds = 300,
+	speaker = {
+		incomeCut = 0.25, -- income lost while the speaker is blown
+		holdSeconds = 2, -- holding E this long fixes it
+		tipSeconds = 30, -- the tip for fixing it, in seconds of income
+	},
+}
+
 Balance.Register = {
 	capMinutes = 10, -- the register stops filling at this many minutes of income
 }

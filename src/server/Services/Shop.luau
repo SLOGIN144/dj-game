@@ -6,7 +6,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local Income = require(ReplicatedStorage.Shared.Economy.Income)
 local PlayerState = require(script.Parent.PlayerState)
 local PlotLayout = require(ReplicatedStorage.Shared.Config.PlotLayout)
 local PlotView = require(script.Parent.Parent.World.PlotView)
@@ -82,7 +81,7 @@ function Shop.buy(state: PlayerState.State, itemId: string): boolean
 	PlayerState.setCash(state, state.cash - effect.cost)
 	state.bought[itemId] = true
 	PlotView.showItem(state.plot, state.locationId, itemId, true)
-	PlayerState.setIncome(state, Income.perSecond(state.locationId, state.bought))
+	PlayerState.updateIncome(state)
 	Shop.refresh(state)
 
 	if Unlocks.isComplete(state.locationId, state.bought) then

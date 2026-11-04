@@ -6,6 +6,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Config.Balance)
+local Crowd = require(ReplicatedStorage.Shared.Economy.Crowd)
+local Income = require(ReplicatedStorage.Shared.Economy.Income)
+
+-- A drop boost: its income multiplier until `endsAt` (server time).
+export type Boost = { multiplier: number, endsAt: number }
 
 export type State = {
 	player: Player,
@@ -15,7 +20,10 @@ export type State = {
 	bought: { [string]: boolean }, -- item ids bought at the current location
 	ownedTracks: { [string]: boolean }, -- track ids in the plot's mix
 	register: number, -- cash waiting in the plot's register
-	income: number, -- cash per second
+	baseIncome: number, -- cash per second from the bought items alone
+	income: number, -- cash per second with every bonus, what the register fills with
+	boost: Boost?,
+	speakerBlown: boolean,
 }
 
 local PlayerState = {}
@@ -31,14 +39,17 @@ function PlayerState.create(player: Player, plot: Model): State
 		bought = {},
 		ownedTracks = {},
 		register = 0,
+		baseIncome = 0,
 		income = 0,
+		boost = nil,
+		speakerBlown = false,
 	}
 	for _, trackId in Balance.Start.tracks do
 		state.ownedTracks[trackId] = true
 	end
 	states[player] = state
 	PlayerState.setCash(state, state.cash)
-	PlayerState.setIncome(state, state.income)
+	PlayerState.updateIncome(state)
 	return state
 end
 
@@ -63,6 +74,31 @@ end
 function PlayerState.setIncome(state: State, value: number)
 	state.income = value
 	state.player:SetAttribute("Income", value)
+end
+
+-- Tracks the player bought in the shop (the starter tracks don't count for the bonus).
+function PlayerState.tracksBought(state: State): number
+	local count = 0
+	for trackId in state.ownedTracks do
+		if not table.find(Balance.Start.tracks, trackId) then
+			count += 1
+		end
+	end
+	return count
+end
+
+-- Recomputes the plot's income from what it has built and what's going on, and its guest count.
+function PlayerState.updateIncome(state: State)
+	state.baseIncome = Income.perSecond(state.locationId, state.bought)
+	PlayerState.setIncome(
+		state,
+		Income.total(state.baseIncome, {
+			tracksBought = PlayerState.tracksBought(state),
+			boost = if state.boost then state.boost.multiplier else 1,
+			speakerBlown = state.speakerBlown,
+		})
+	)
+	state.plot:SetAttribute("Guests", Crowd.count(state.locationId, state.baseIncome))
 end
 
 return PlayerState

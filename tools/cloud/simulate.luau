@@ -876,6 +876,12 @@ local okSession, sessionError = pcall(function()
 		check(gui(name) ~= nil, "the client builds its " .. name .. " screen")
 	end
 	check(label("Hud", "Cash") == "$50", "the HUD shows the starting cash")
+	advance(1)
+	local guide = playerGui and playerGui:FindFirstChild("Guide")
+	check(
+		guide ~= nil and guide.Enabled and guide.Adornee ~= nil and guide.Adornee.Name == "Pad_dorm_laptop",
+		"the guide points a new player at the free laptop"
+	)
 	local audio = dataModel:GetService("SoundService"):FindFirstChild("AudioEngine", true)
 	check(audio ~= nil, "the client builds its audio engine")
 	check(workspace:FindFirstChild("LocalGuests") ~= nil, "the client has a folder for guests")
@@ -1150,6 +1156,9 @@ local okSession, sessionError = pcall(function()
 			break
 		end
 		print("== move on to " .. nextLocation.id)
+		advance(1)
+		local guideNow = playerGui:FindFirstChild("Guide")
+		check(guideNow.Adornee ~= nil and guideNow.Adornee.Name == "Pad_MoveOn", "the guide points at Move On")
 		movePad.Touched:Fire(rootOf(filipBody))
 		advance(0.3)
 		local fades = sentSince(#sent - 4, "Travel")

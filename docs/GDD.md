@@ -490,7 +490,7 @@ Launch happens only when the core loop is polished and has no known bugs; big co
 
 1. **Milestone 2 — Full launch content:** the new street (growing buildings, interiors, the jet), Move on, the house party, club and Ibiza locations, all three events, all characters and goals, star DJs, more tracks. (A first version was written ahead in the autonomous run; it needs Filip's review and a Studio pass.)
 2. **Milestone 3 — Launch prep:** monetization (decided with Filip), settings, mobile performance pass, leaderboards, analytics events, maturity questionnaire, icon and thumbnails, trailer clips for TikTok. Then launch v1.0.
-3. **Updates:** rebirth and the world tour, offline earnings, B2B at one plot, club likes, themed nights, new genres.
+3. **Updates:** phone orders and truck delivery instead of floor pads (designed 2026-11-05, not built, no implementation plan yet: see `docs/superpowers/specs/2026-11-05-truck-delivery-design.md`), rebirth and the world tour, offline earnings, B2B at one plot, club likes, themed nights, new genres.
 
 ## Working rules for Claude Code
 

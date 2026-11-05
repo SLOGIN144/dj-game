@@ -7,6 +7,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local Camera = require(script.Parent.Parent.Controllers.Camera)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Sfx = require(script.Parent.Parent.Controllers.Sfx)
 local Style = require(script.Parent.Style)
@@ -62,6 +63,7 @@ function Fade.start()
 		elseif phase == "in" then
 			task.delay(HOLD, function()
 				if token == mine then
+					Camera.behindCharacter() -- still dark, so the turn isn't seen
 					back()
 				end
 			end)

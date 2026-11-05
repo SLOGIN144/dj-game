@@ -115,6 +115,27 @@ function Camera.peek(target: Vector3)
 	end)
 end
 
+-- Swings the camera round behind the character, keeping its height and distance: after a trip the
+-- character faces the room, but the camera still looks wherever it did before leaving.
+function Camera.behindCharacter()
+	local camera = workspace.CurrentCamera
+	local character = Players.LocalPlayer.Character
+	local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
+	if shot or peeking or not camera or not root or not root:IsA("BasePart") then
+		return
+	end
+	local forward = root.CFrame.LookVector
+	local flat = Vector3.new(forward.X, 0, forward.Z)
+	if flat.Magnitude < 1e-3 then
+		return
+	end
+	local pitch = camera.CFrame.LookVector.Y
+	local look = flat.Unit * math.sqrt(1 - pitch * pitch) + Vector3.new(0, pitch, 0)
+	local focus = camera.Focus.Position
+	local distance = (camera.CFrame.Position - focus).Magnitude
+	camera.CFrame = CFrame.lookAt(root.Position - look * distance, root.Position)
+end
+
 -- A short shake, 0..1 (a drop is about 0.4, a Perfect press 1).
 function Camera.shake(strength: number)
 	if os.clock() - shakeAt < SHAKE_SECONDS and strength < shakeStrength then

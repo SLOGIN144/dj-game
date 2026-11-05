@@ -1,8 +1,8 @@
 --!strict
 -- A star DJ at the decks during their guest set (GDD: star DJs), on every client: a figure in
--- their look (Config/StarDjs) behind the plot's booth, headphones on, nodding on the beat of the
--- plot's mix with a hand on the decks and the other one up on drops. It's built from parts on this
--- client like the guests; the art pass replaces it with a rig.
+-- their look (Config/StarDjs: colours and a signature hat) behind the plot's booth, headphones on,
+-- nodding on the beat of the plot's mix with a hand on the decks and the other one up on drops.
+-- It's built from parts on this client like the guests; the art pass replaces it with a rig.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -18,12 +18,19 @@ local StarDjView = {}
 
 local VIEW_DISTANCE = 220
 
+-- A part that rides on the head (hair, headphones, a hat), placed relative to the head's centre.
+type Worn = { part: BasePart, offset: CFrame }
+
 type Figure = {
 	djId: string,
 	locationId: string,
 	model: Model,
-	parts: { BasePart }, -- torso, head, hair, band, left cup, right cup, left arm, right arm, left leg, right leg
+	parts: { BasePart }, -- torso, head, left arm, right arm, left leg, right leg
+	worn: { Worn },
 }
+
+local UPRIGHT = CFrame.Angles(0, 0, math.rad(90)) -- turns a cylinder's axis (X) to vertical
+local STRAW = Color3.fromRGB(226, 196, 132)
 
 local figures: { [Model]: Figure } = {}
 local folder: Folder
@@ -51,23 +58,52 @@ local function build(plot: Model, dj: Types.StarDj, locationId: string): Figure
 	local parts = {
 		part(model, "Torso", Vector3.new(2, 2, 1), look.top),
 		part(model, "Head", Vector3.new(1.25, 1.25, 1.25), look.skin, Enum.PartType.Ball),
-		part(model, "Hair", Vector3.new(1.3, 0.45, 1.3), look.hair),
-		part(model, "Band", Vector3.new(1.5, 0.2, 0.3), look.accent),
-		part(model, "LeftCup", cup, look.accent),
-		part(model, "RightCup", cup, look.accent),
 		part(model, "LeftArm", Vector3.new(0.8, 1.8, 0.8), look.top),
 		part(model, "RightArm", Vector3.new(0.8, 1.8, 0.8), look.top),
 		part(model, "LeftLeg", Vector3.new(0.9, 2, 0.9), Color3.fromRGB(30, 30, 40)),
 		part(model, "RightLeg", Vector3.new(0.9, 2, 0.9), Color3.fromRGB(30, 30, 40)),
 	}
-	local accent = parts[4]
+	local worn: { Worn } = {
+		{ part = part(model, "Hair", Vector3.new(1.3, 0.45, 1.3), look.hair), offset = CFrame.new(0, 0.55, 0.05) },
+		{ part = part(model, "Band", Vector3.new(1.5, 0.2, 0.3), look.accent), offset = CFrame.new(0, 0.62, 0) },
+		{ part = part(model, "LeftCup", cup, look.accent), offset = CFrame.new(-0.72, 0, 0) },
+		{ part = part(model, "RightCup", cup, look.accent), offset = CFrame.new(0.72, 0, 0) },
+	}
+	local function wear(name: string, size: Vector3, colour: Color3, offset: CFrame, shape: Enum.PartType?)
+		table.insert(worn, { part = part(model, name, size, colour, shape), offset = offset })
+	end
+	if look.hat == "bucket" then
+		wear("Brim", Vector3.new(0.12, 1.9, 1.9), look.top, CFrame.new(0, 0.5, 0) * UPRIGHT, Enum.PartType.Cylinder)
+		wear("Crown", Vector3.new(0.55, 1.35, 1.35), look.top, CFrame.new(0, 0.78, 0) * UPRIGHT, Enum.PartType.Cylinder)
+		wear(
+			"HatBand",
+			Vector3.new(0.14, 1.4, 1.4),
+			look.accent,
+			CFrame.new(0, 0.6, 0) * UPRIGHT,
+			Enum.PartType.Cylinder
+		)
+	elseif look.hat == "sun" then
+		wear("Brim", Vector3.new(0.1, 2.7, 2.7), STRAW, CFrame.new(0, 0.5, 0) * UPRIGHT, Enum.PartType.Cylinder)
+		wear("Crown", Vector3.new(0.5, 1.3, 1.3), STRAW, CFrame.new(0, 0.76, 0) * UPRIGHT, Enum.PartType.Cylinder)
+		wear(
+			"HatBand",
+			Vector3.new(0.14, 1.34, 1.34),
+			look.accent,
+			CFrame.new(0, 0.58, 0) * UPRIGHT,
+			Enum.PartType.Cylinder
+		)
+	elseif look.hat == "visor" then
+		local visor = part(model, "Visor", Vector3.new(1.3, 0.24, 0.16), look.accent)
+		visor.Material = Enum.Material.Neon
+		table.insert(worn, { part = visor, offset = CFrame.new(0, 0.12, -0.6) })
+	end
 	local glow = Instance.new("PointLight")
 	glow.Color = dj.colour
 	glow.Range = 10
 	glow.Brightness = 1.5
-	glow.Parent = accent
+	glow.Parent = worn[2].part
 	model.Parent = folder
-	return { djId = dj.id, locationId = locationId, model = model, parts = parts }
+	return { djId = dj.id, locationId = locationId, model = model, parts = parts, worn = worn }
 end
 
 local function animate(plot: Model, figure: Figure, blockout: Types.Blockout, parts: { BasePart }, frames: { CFrame })
@@ -92,10 +128,6 @@ local function animate(plot: Model, figure: Figure, blockout: Types.Blockout, pa
 	local free = if drop then math.rad(165) + math.sin(beat * math.pi) * math.rad(10) else math.rad(70)
 	table.insert(frames, body * CFrame.new(0, 3, 0))
 	table.insert(frames, head)
-	table.insert(frames, head * CFrame.new(0, 0.55, 0.05))
-	table.insert(frames, head * CFrame.new(0, 0.62, 0))
-	table.insert(frames, head * CFrame.new(-0.72, 0, 0))
-	table.insert(frames, head * CFrame.new(0.72, 0, 0))
 	table.insert(
 		frames,
 		body * CFrame.new(-1.4, 3.9, 0) * CFrame.Angles(math.rad(70) + mixing, 0, -0.1) * CFrame.new(0, -0.9, 0)
@@ -105,6 +137,10 @@ local function animate(plot: Model, figure: Figure, blockout: Types.Blockout, pa
 	table.insert(frames, root * CFrame.new(0.5, 1, 0))
 	for _, p in figure.parts do
 		table.insert(parts, p)
+	end
+	for _, item in figure.worn do
+		table.insert(parts, item.part)
+		table.insert(frames, head * item.offset)
 	end
 end
 

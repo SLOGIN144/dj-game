@@ -83,8 +83,11 @@ export type StarDj = {
 	price: number, -- cash per booking
 	multiplier: number, -- the plot's income multiplier during their set
 	colour: Color3, -- their signature colour: the board, their portrait, the lights in their set
-	look: { skin: Color3, hair: Color3, top: Color3, accent: Color3 }, -- their figure at the decks
+	look: { skin: Color3, hair: Color3, top: Color3, accent: Color3, hat: StarDjHat? }, -- their figure at the decks
 }
+
+-- A star DJ's signature hat (model sheet "Characters").
+export type StarDjHat = "bucket" | "sun" | "visor"
 
 -- What the client's light show does with a part on the beat (see Controllers/LightShow).
 --   led: the main colour wash; speaker: pumps on every kick; spot: alternating fixtures that

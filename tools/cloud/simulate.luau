@@ -1147,6 +1147,8 @@ local okSession, sessionError = pcall(function()
 				"Kiko's figure is at the decks"
 			)
 			check(gui("DjBoard").Enabled == false, "the board closes once booked")
+			local kikoFigure = workspace.LocalStarDjs:GetChildren()[1]
+			check(kikoFigure ~= nil and kikoFigure:FindFirstChild("Brim") ~= nil, "Kiko wears the bucket hat")
 			check(label("Hud", "Text") ~= nil, "the HUD has its banners")
 			check(findDescendant(plot.Items, function(d)
 				return d.Name == "BookPrompt"

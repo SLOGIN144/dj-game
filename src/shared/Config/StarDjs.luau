@@ -21,6 +21,7 @@ local StarDjs: { Types.StarDj } = {
 			hair = rgb(40, 30, 26),
 			top = rgb(60, 220, 200),
 			accent = rgb(255, 80, 170),
+			hat = "bucket",
 		},
 	},
 	{
@@ -46,7 +47,13 @@ local StarDjs: { Types.StarDj } = {
 		price = 450000,
 		multiplier = 4,
 		colour = rgb(60, 160, 255),
-		look = { skin = rgb(150, 100, 70), hair = rgb(20, 20, 24), top = rgb(26, 26, 32), accent = rgb(60, 160, 255) },
+		look = {
+			skin = rgb(150, 100, 70),
+			hair = rgb(20, 20, 24),
+			top = rgb(26, 26, 32),
+			accent = rgb(60, 160, 255),
+			hat = "visor",
+		},
 	},
 	{
 		id = "dj_mira",
@@ -61,6 +68,7 @@ local StarDjs: { Types.StarDj } = {
 			hair = rgb(60, 36, 24),
 			top = rgb(255, 122, 60),
 			accent = rgb(255, 60, 168),
+			hat = "sun",
 		},
 	},
 }

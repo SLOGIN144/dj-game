@@ -50,7 +50,18 @@ local function buildLamp(x: number, z: number, parent: Instance)
 	light.Parent = head
 end
 
+-- A new place's template comes with a baseplate and a spawn in the middle of what's now the road.
+local function removeTemplateParts()
+	for _, name in { "Baseplate", "SpawnLocation" } do
+		local leftover = workspace:FindFirstChild(name)
+		if leftover then
+			leftover:Destroy()
+		end
+	end
+end
+
 function Street.build(): { Model }
+	removeTemplateParts()
 	NightLook.apply()
 	WaterLook.apply()
 

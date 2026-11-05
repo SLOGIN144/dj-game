@@ -11,6 +11,7 @@ local Buildings = require(Shared.Config.Buildings)
 local Goals = require(Shared.Config.Goals)
 local Items = require(Shared.Config.Items)
 local Locations = require(Shared.Config.Locations)
+local PlotLayout = require(Shared.Config.PlotLayout)
 local Skies = require(Shared.Config.Skies)
 local StarDjs = require(Shared.Config.StarDjs)
 local T = require(script.Parent.TestUtil)
@@ -90,7 +91,7 @@ return {
 		end
 	end,
 
-	["people stand in the open: guests, the VIP at the door, the DJ and the photographer"] = function()
+	["people stand in the open: guests, the VIP, the DJ, the photographer, the buttons and the register"] = function()
 		-- Whether a person standing with their feet at `spot` would be inside a solid part.
 		local function blocked(blockout: any, spot: Vector3): string?
 			local function check(specs: { any }, where: string): string?
@@ -129,6 +130,13 @@ return {
 			for index, spot in blockout.guests.spots do
 				spots["guest " .. index] = spot
 			end
+			-- The fixtures: a player stands on each button and the spawn, and walks into the register.
+			local layout = blockout.layout or PlotLayout
+			for index, slot in layout.buttonSlots do
+				spots["button " .. index] = slot
+			end
+			spots.spawn = layout.spawn
+			spots.register = layout.register
 			if table.find(location.events, "photographer") then
 				local towards = decks.cameraLookAt - decks.stand
 				local ahead = decks.stand + Vector3.new(towards.X, 0, towards.Z).Unit * 6

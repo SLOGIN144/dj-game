@@ -6,10 +6,10 @@ Ibiza and the jet, star DJs, the VIP and photographer events, the leaderboard an
 `docs/decisions.md`).
 
 Every file is formatted (StyLua), linted (Selene) and type-checked against the Roblox API
-(luau-lsp with the Roblox definitions). The pure modules pass their specs: 147 tests, run outside
+(luau-lsp with the Roblox definitions). The pure modules pass their specs: 152 tests, run outside
 Roblox with Lune. The server's world building ran on Lune's Roblox instances, and renders of
 each room were checked against the concept images. A simulation ran the real server and client
-together through a whole session (`tools/cloud/`, 320 checks); it found and fixed a start-up
+together through a whole session (`tools/cloud/`, 327 checks); it found and fixed a start-up
 stall. **None of it has run in Roblox yet.** Work
 through this list from the top, read the Output after each part, and fix what breaks before
 Filip's playtest.
@@ -24,7 +24,7 @@ Filip's playtest.
 ## 0. Start
 
 - [ ] `rojo serve`, connect the plugin, Play. The Output has no errors or warnings from `Server` or `Client`, and prints `[DevTools] Studio shortcuts on`.
-- [ ] Tagger place: Play runs the specs and prints `[Tests] 147 passed, 0 failed`.
+- [ ] Tagger place: Play runs the specs and prints `[Tests] 152 passed, 0 failed`.
 - [ ] Lighting › Technology is **Future** (a script can't set it).
 - [ ] Note whether Workspace › StreamingEnabled is on. The code asks the server to stream the destination before every trip (`Travel.place`). If anything at the venue is missing on arrival, say so before trying fixes.
 

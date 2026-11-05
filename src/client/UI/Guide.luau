@@ -49,13 +49,13 @@ end
 -- The part a goal points at, if there's one to point at right now.
 local function goalTarget(plot: Model, locationId: string, goal: Types.Goal): (BasePart?, string?)
 	local items = plot:FindFirstChild("Items")
-	local pads = plot:FindFirstChild("Pads")
 	local blockout = Blockouts[locationId]
 	if goal.kind == "collect" then
 		local register = find(plot, "Register")
 		return register, "Collect"
 	elseif goal.kind == "buy" and goal.target then
-		return find(pads, "Pad_" .. goal.target), "Buy"
+		-- The phone does the ordering; once the box is in hand the outline is the thing to find.
+		return find(plot:FindFirstChild("Outlines"), "Outline_" .. goal.target), "Place here"
 	elseif (goal.kind == "drop" or goal.kind == "perfect") and blockout then
 		return find(items, blockout.decks.itemId), "Play"
 	elseif goal.kind == "book" then
@@ -69,22 +69,28 @@ local function goalTarget(plot: Model, locationId: string, goal: Types.Goal): (B
 	return nil, nil
 end
 
--- What to point at: Move On, else the free first button, else the first goal with a target.
+-- What to point at: Move On, else the box to pick up or the outline to put it on, else the first
+-- goal with a target. (Waiting for the truck, or choosing on the phone, has nothing in the world to
+-- point at: the phone button pulses until the first order.)
 local function target(plot: Model): (BasePart?, string?)
 	local locationId = PlotSpace.locationId(plot)
 	if not locationId then
 		return nil, nil
 	end
-	local pads = plot:FindFirstChild("Pads")
-	local moveOn = find(pads, "Pad_MoveOn")
+	local moveOn = find(plot:FindFirstChild("Pads"), "Pad_MoveOn")
 	if moveOn then
 		return moveOn, "Move on"
 	end
-	local list: { Types.Item } = Items[locationId] or {}
-	local first = list[1]
-	local items = plot:FindFirstChild("Items")
-	if first and not (items and items:FindFirstChild(first.id)) then
-		return find(pads, "Pad_" .. first.id), "Start here"
+	local order = player:GetAttribute("OrderState")
+	if order == "ready" then
+		return find(plot:FindFirstChild("Boxes"), "Body"), "Pick up"
+	elseif order == "carrying" then
+		local carrying = player:GetAttribute("Carrying")
+		if typeof(carrying) == "string" then
+			return find(plot:FindFirstChild("Outlines"), "Outline_" .. carrying), "Place here"
+		end
+	elseif order == "transit" then
+		return nil, nil
 	end
 	local host = GoalsConfig[locationId]
 	if not host then

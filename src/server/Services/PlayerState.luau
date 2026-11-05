@@ -22,6 +22,9 @@ export type State = {
 	player: Player,
 	plot: Model,
 	cash: number,
+	-- Cash paid for ordered items that aren't placed yet. It's out of `cash`, but a save keeps it for
+	-- the player, so leaving or crashing mid-delivery never costs them anything (Services/Delivery).
+	inFlight: number,
 	totalEarned: number, -- every bit of cash ever earned (for the leaderboard later)
 	locationId: string,
 	bought: { [string]: boolean }, -- item ids bought at the current location
@@ -59,6 +62,7 @@ function PlayerState.create(player: Player, plot: Model, saved: SaveSchema.SaveD
 		player = player,
 		plot = plot,
 		cash = saved.cash,
+		inFlight = 0,
 		totalEarned = saved.totalEarned,
 		locationId = saved.location,
 		bought = set(saved.boughtItems),
@@ -94,7 +98,7 @@ function PlayerState.snapshot(state: State): SaveSchema.SaveData
 	end
 	return {
 		version = SaveSchema.VERSION,
-		cash = state.cash,
+		cash = state.cash + state.inFlight,
 		totalEarned = state.totalEarned,
 		location = state.locationId,
 		boughtItems = list(state.bought),

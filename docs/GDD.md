@@ -66,8 +66,9 @@ Around it, every few minutes: a club event, a goal from the location's character
 
 ### Buttons
 
-- Buttons are pads on the floor with a name and a price. Stepping on one with enough cash buys it; the part appears with a short build animation and a sound.
-- Buttons unlock in a fixed order. The next 2–3 are always visible, so the player has a choice and a goal in sight; later ones stay hidden.
+- **Phone orders (built for the dorm first; the other locations follow):** the player opens the phone (P, or a tap), ticks up to 3 of the next items they can afford and presses Order. The cash is taken, a delivery truck drives down the street to their kerb and leaves a labelled box per item on the pavement. The player picks a box up (E), carries it into the room and places it on its glowing outline (E): only then does the item appear, with the build animation and sound, and only then does it earn. One box at a time; no new order while boxes are still out. The design is in `docs/superpowers/specs/2026-11-05-truck-delivery-design.md`. The Move On pad stays a pad on the floor.
+- Locations not yet converted still use pads on the floor with a name and a price (stepping on one with enough cash buys it).
+- Items unlock in a fixed order. The next 2–3 are always visible, so the player has a choice and a goal in sight; later ones stay hidden.
 - Each button is one entry in `Config/Items.luau`: id, location, order, display name, kind, and the look it shows. Costs and incomes come from `Pricing` (see Money).
 - Blockouts are built from code at server start (layout data in `Config/`), so the whole world is in git. Imported art later goes into ServerStorage as models named after their item and replaces the blockout parts.
 

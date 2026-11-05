@@ -1,7 +1,9 @@
 --!strict
--- The button pads on each plot and buying from them. The server checks every purchase: only the
--- plot's owner, only a shown button, only with enough cash. Once a location is finished, its
--- buttons give way to the Move On pad (Services/Progression moves the plot on).
+-- What the owner can order next, and what happens when an ordered item is placed. The next few
+-- items of the location are the "shelf" the phone lists (mirrored on the player as "Shelf");
+-- Services/Delivery takes the cash when they order and calls `place` once the box is at its outline.
+-- The server checks everything: only a shelf item can be placed, once. Once a location is finished,
+-- the Move On pad stands on the floor (Services/Progression moves the plot on).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,7 +19,7 @@ local Unlocks = require(ReplicatedStorage.Shared.Economy.Unlocks)
 
 local Shop = {}
 
--- Fires (state, itemId) after a purchase, (state) once the location's last item is bought, and
+-- Fires (state, itemId) after an item is built, (state) once the location's last item is built, and
 -- (state) when the owner steps on the Move On pad.
 Shop.bought = Signal.new()
 Shop.completed = Signal.new()
@@ -25,13 +27,11 @@ Shop.moveOnPressed = Signal.new()
 
 local MOVE_ON = "MoveOn" -- what `blocked` holds while the Move On pad is under its owner's feet
 
-local BUY_LOCK = 0.3 -- seconds between two purchases by one player, so one step buys once
 local STAND_RADIUS = PlotLayout.padSize / 2 + 1 -- a character this close to a pad's centre stands on it
 local CHECK_EVERY = 0.1
 
-local lastBuy: { [Player]: number } = {}
--- The pad (item id) that appeared under its owner's feet. It only works once they step off, so
--- buying one button never buys the next one by accident.
+-- Whether the Move On pad appeared under its owner's feet. It only works once they step off, so
+-- finishing the location never moves them on by accident.
 local blocked: { [Player]: string? } = {}
 
 local function root(player: Player): BasePart?
@@ -75,47 +75,29 @@ local function offerMoveOn(state: PlayerState.State): boolean
 	return true
 end
 
--- Shows the next items of the owner's location as button pads, or the Move On pad once they're
--- all bought.
+-- Publishes the shelf (the next items to order, ids in a comma list on the player) and shows the
+-- Move On pad once the location is finished.
 function Shop.refresh(state: PlayerState.State)
+	local ids = {}
+	for _, item in Unlocks.visible(state.locationId, state.bought) do
+		table.insert(ids, item.id)
+	end
+	state.player:SetAttribute("Shelf", table.concat(ids, ","))
 	if offerMoveOn(state) then
 		return
 	end
-	local effects = Pricing.effects(state.locationId)
-	local pads: { PlotView.Pad } = {}
-	for _, item in Unlocks.visible(state.locationId, state.bought) do
-		table.insert(pads, { item = item, effect = effects[item.id] })
-	end
-
-	PlotView.setPads(state.plot, pads, function(itemId, hit)
-		if isOwner(state, hit) then
-			Shop.buy(state, itemId)
-		end
-	end)
-
-	local slot = standingSlot(state)
-	blocked[state.player] = if slot and pads[slot] then pads[slot].item.id else nil
+	PlotView.clearPads(state.plot)
+	blocked[state.player] = nil
 end
 
--- Buys an item for the player if they may and can afford it. Returns whether it was bought.
-function Shop.buy(state: PlayerState.State, itemId: string): boolean
-	local player = state.player
-	local now = os.clock()
-	if blocked[player] == itemId or now - (lastBuy[player] or 0) < BUY_LOCK then
+-- Builds an item the owner ordered (its cash is already taken) if it's on the shelf and not built
+-- yet. Returns whether it was built.
+function Shop.place(state: PlayerState.State, itemId: string, animate: boolean?): boolean
+	if state.bought[itemId] or not Unlocks.canBuy(state.locationId, state.bought, itemId) then
 		return false
 	end
-	if not Unlocks.canBuy(state.locationId, state.bought, itemId) then
-		return false
-	end
-	local effect = Pricing.effects(state.locationId)[itemId]
-	if state.cash < effect.cost then
-		return false
-	end
-
-	lastBuy[player] = now
-	PlayerState.setCash(state, state.cash - effect.cost)
 	state.bought[itemId] = true
-	PlotView.showItem(state.plot, state.locationId, itemId, true)
+	PlotView.showItem(state.plot, state.locationId, itemId, animate ~= false)
 	PlayerState.updateIncome(state)
 	Shop.refresh(state)
 
@@ -126,7 +108,21 @@ function Shop.buy(state: PlayerState.State, itemId: string): boolean
 	return true
 end
 
--- Unblocks pads once their owner has stepped off them.
+-- Buys and builds an item at once, with no phone, truck or boxes. The game itself never calls this:
+-- it's for the Studio shortcuts and the simulation. Returns whether it worked.
+function Shop.buy(state: PlayerState.State, itemId: string): boolean
+	if state.bought[itemId] or not Unlocks.canBuy(state.locationId, state.bought, itemId) then
+		return false
+	end
+	local cost = Pricing.effects(state.locationId)[itemId].cost
+	if state.cash < cost then
+		return false
+	end
+	PlayerState.setCash(state, state.cash - cost)
+	return Shop.place(state, itemId, true)
+end
+
+-- Unblocks the Move On pad once its owner has stepped off it.
 function Shop.start()
 	local elapsed = 0
 	RunService.Heartbeat:Connect(function(dt)
@@ -143,7 +139,6 @@ function Shop.start()
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
-		lastBuy[player] = nil
 		blocked[player] = nil
 	end)
 end

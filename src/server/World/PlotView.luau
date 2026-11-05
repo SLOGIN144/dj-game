@@ -22,9 +22,6 @@ local Types = require(ReplicatedStorage.Shared.Types)
 
 local PlotView = {}
 
-export type Pad = { item: Types.Item, effect: Types.ItemEffect }
-
-local PAD_COLOUR = Color3.fromRGB(70, 255, 140)
 local MOVE_ON_COLOUR = Color3.fromRGB(255, 196, 60)
 local REGISTER_TEXT = Color3.fromRGB(120, 255, 160)
 local REGISTER_FULL = Color3.fromRGB(255, 170, 60)
@@ -155,7 +152,7 @@ function PlotView.setup(plot: Model)
 		label("Hint", registerGui, UDim2.fromScale(0, 0.65), UDim2.fromScale(1, 0.35), Color3.new(0.86, 0.86, 0.9))
 	hint.Text = "Touch to collect"
 
-	for _, name in { "Shell", "Items", "Pads", "Showcase" } do
+	for _, name in { "Shell", "Items", "Pads", "Showcase", "Boxes", "Outlines" } do
 		local folder = Instance.new("Folder")
 		folder.Name = name
 		folder.Parent = plot
@@ -254,6 +251,7 @@ function PlotView.setLocation(plot: Model, locationId: string)
 	plot:SetAttribute("LocationId", locationId)
 	PlotView.setBuilding(plot, locationId)
 	child(plot, "Items"):ClearAllChildren()
+	PlotView.clearDelivery(plot)
 	child(plot, "Pads"):ClearAllChildren()
 
 	local at = PlotSpace.origin(plot)
@@ -318,7 +316,7 @@ end
 -- Removes the room, the items, the pads and the showcase, the plot's state attributes, puts the
 -- register and the spawn back on the street and empties the register label.
 function PlotView.clear(plot: Model)
-	for _, name in { "Shell", "Items", "Pads", "Showcase" } do
+	for _, name in { "Shell", "Items", "Pads", "Showcase", "Boxes", "Outlines" } do
 		PartFactory.clearTerrain(child(plot, name))
 		child(plot, name):ClearAllChildren()
 	end
@@ -344,38 +342,128 @@ local function makePad(plot: Model, name: string, slot: Vector3, colour: Color3,
 	return part
 end
 
--- Replaces the button pads with one per entry, in the location's button slots.
-function PlotView.setPads(plot: Model, pads: { Pad }, onTouched: (itemId: string, hit: BasePart) -> ())
-	local folder = child(plot, "Pads")
-	folder:ClearAllChildren()
-	local slots = PlotSpace.layout(PlotSpace.locationId(plot)).buttonSlots
-	for index, entry in pads do
-		local slot = slots[index]
-		if not slot then
-			break
-		end
-		local pad = makePad(plot, "Pad_" .. entry.item.id, slot, PAD_COLOUR, PlotLayout.padSize)
-		pad:SetAttribute("ItemId", entry.item.id)
-		pad:SetAttribute("Price", entry.effect.cost)
+-- Takes the item buttons away: only the Move On pad ever stands on the floor now, the rest is ordered
+-- on the phone (Services/Delivery).
+function PlotView.clearPads(plot: Model)
+	child(plot, "Pads"):ClearAllChildren()
+end
 
-		local price = if entry.effect.cost == 0 then "FREE" else Format.money(entry.effect.cost)
-		local effect = if entry.item.kind == "gear"
-			then string.format("x%.2f income", entry.effect.multiplier)
-			else Format.rate(entry.effect.flat)
-		local gui = billboard(pad, Vector2.new(8, 3.6), 3.4)
-		gui.Name = "PadGui"
-		label("ItemName", gui, UDim2.fromScale(0, 0), UDim2.fromScale(1, 0.4), Color3.new(1, 1, 1)).Text =
-			entry.item.name
-		label("Price", gui, UDim2.fromScale(0, 0.4), UDim2.fromScale(1, 0.33), PAD_COLOUR).Text = price
-		label("Effect", gui, UDim2.fromScale(0, 0.73), UDim2.fromScale(1, 0.27), Color3.fromRGB(200, 200, 215)).Text =
-			effect
+local BOX_SIZE = Vector3.new(3.4, 2.6, 2.6)
+local BOX_COLOUR = Color3.fromRGB(196, 150, 96)
+local TAPE_COLOUR = Color3.fromRGB(150, 90, 255)
+local OUTLINE_MIN = 0.6 -- the thinnest an outline is drawn, so flat things (a rug, posters) still show
+local PROMPT_HEIGHT = 1.4 -- above the floor, where a place prompt hangs (it's reached from beneath a ceiling item)
 
-		local itemId = entry.item.id
-		pad.Touched:Connect(function(hit)
-			onTouched(itemId, hit)
-		end)
-		pad.Parent = folder
+-- The centre of a box lying on the pavement at slot `index` of an order, in world space.
+function PlotView.boxSpot(plot: Model, index: number): CFrame
+	local spots = PlotLayout.boxSpots
+	local spot = spots[math.min(index, #spots)]
+	return origin(plot) * CFrame.new(spot + Vector3.new(0, BOX_SIZE.Y / 2, 0))
+end
+
+-- A prompt only the plot's owner is meant to see; `kind` ("BoxItem" or "OutlineItem") says which
+-- item it's for. Attributes are set before it's parented, so the clients' filter sees them at once.
+local function ownerPrompt(
+	plot: Model,
+	parent: Instance,
+	name: string,
+	action: string,
+	object: string,
+	kind: string,
+	itemId: string
+): ProximityPrompt
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = name
+	prompt.ActionText = action
+	prompt.ObjectText = object
+	prompt.HoldDuration = 0
+	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	prompt.RequiresLineOfSight = false
+	prompt:SetAttribute("OwnerUserId", plot:GetAttribute("OwnerUserId")) -- clients hide it from everyone else
+	prompt:SetAttribute(kind, itemId)
+	prompt.Parent = parent
+	return prompt
+end
+
+-- A labelled box for `item` with the owner's "Pick up" prompt: at its pavement slot `index`, or
+-- at `at` (the truck's tailgate) to be moved to the slot. Parented to the plot's Boxes folder.
+function PlotView.addBox(plot: Model, item: Types.Item, index: number, at: CFrame?): Model
+	local model = Instance.new("Model")
+	model.Name = "Box_" .. item.id
+	local start = at or PlotView.boxSpot(plot, index)
+	local body = Builder.part("Body", BOX_SIZE, start, BOX_COLOUR, model, { material = Enum.Material.Cardboard })
+	Builder.part(
+		"Tape",
+		Vector3.new(0.5, BOX_SIZE.Y + 0.1, BOX_SIZE.Z + 0.1),
+		start,
+		TAPE_COLOUR,
+		model,
+		{ material = Enum.Material.SmoothPlastic }
+	)
+	model.PrimaryPart = body
+	local gui = billboard(body, Vector2.new(6, 1.4), 2.4)
+	gui.Name = "BoxGui"
+	label("ItemName", gui, UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), Color3.new(1, 1, 1)).Text = item.name
+	local prompt = ownerPrompt(plot, body, "PickUpPrompt", "Pick up", item.name, "BoxItem", item.id)
+	prompt.MaxActivationDistance = 10
+	model.Parent = child(plot, "Boxes")
+	return model
+end
+
+-- The glowing outline where `item` goes in the owner's room, with its "Place" prompt. It's the box
+-- of the item's parts, or the item's own `placements` entry.
+function PlotView.addOutline(plot: Model, locationId: string, item: Types.Item): BasePart
+	local blockout = Blockouts[locationId]
+	local override = if blockout.placements then blockout.placements[item.id] else nil
+	local bottom, size
+	if override then
+		bottom, size = override.at, override.size
+	else
+		local low, high = Bounds.ofSpecs(blockout.items[item.id] or {})
+		size = high - low
+		bottom = Vector3.new((low.X + high.X) / 2, low.Y, (low.Z + high.Z) / 2)
 	end
+	size = size:Max(Vector3.one * OUTLINE_MIN)
+	local location = PlotSpace.location(locationId)
+	local colour = if location then location.colour else Color3.fromRGB(150, 90, 255)
+
+	local part = Instance.new("Part")
+	part.Name = "Outline_" .. item.id
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanTouch = false
+	part.CastShadow = false
+	part.Size = size
+	part.CFrame = PlotSpace.origin(plot) * CFrame.new(bottom + Vector3.new(0, size.Y / 2, 0))
+	part.Color = colour
+	part.Material = Enum.Material.Neon
+	part.Transparency = 0.7
+	local frame = Instance.new("SelectionBox")
+	frame.Adornee = part
+	frame.Color3 = colour
+	frame.LineThickness = 0.06
+	frame.SurfaceColor3 = colour
+	frame.SurfaceTransparency = 0.85
+	frame.Parent = part
+	local gui = billboard(part, Vector2.new(10, 2), size.Y / 2 + 2)
+	gui.Name = "OutlineGui"
+	label("ItemName", gui, UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), colour).Text = "Place: " .. item.name
+
+	-- The prompt hangs at floor height under the outline, so a ceiling or wall item is placed from below.
+	local anchor = Instance.new("Attachment")
+	anchor.Name = "PromptAnchor"
+	anchor.Position = Vector3.new(0, 0.2 + PROMPT_HEIGHT - (bottom.Y + size.Y / 2), 0)
+	anchor.Parent = part
+	local prompt = ownerPrompt(plot, anchor, "PlacePrompt", "Place", item.name, "OutlineItem", item.id)
+	prompt.MaxActivationDistance = 12
+	part.Parent = child(plot, "Outlines")
+	return part
+end
+
+-- Clears the boxes and outlines of a delivery (it's done, or cancelled).
+function PlotView.clearDelivery(plot: Model)
+	child(plot, "Boxes"):ClearAllChildren()
+	child(plot, "Outlines"):ClearAllChildren()
 end
 
 -- Replaces the button pads with the Move On pad, once the location is finished: stepping on it

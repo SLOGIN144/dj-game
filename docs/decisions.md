@@ -45,6 +45,19 @@ work through in Studio. `docs/renders/blockouts.png` shows every location as the
 | 20 | **Studio-only testing shortcuts**: with the F2 overlay open, F3 gives cash, F4 finishes the location, F6 starts an event and F7 rests the DJs. The server only listens in Studio. | Testing four locations by playing through them would take about 9 hours. | `Services/DevTools.luau`, `UI/DebugOverlay.luau` |
 | 21 | **Cloud checks in the repo** (`tools/cloud/`): the Lune spec runner, the world build, a renderer, and a simulation that runs the real server and client together through a whole session. They're dev tools, not packages, and nothing in them ships. | They found a real start-up bug (the client waiting for remotes the server made late) that no type check could. Future sessions without Studio can run them. | `tools/cloud/README.md` |
 
+## Phone orders and the bigger dorm (2026-11-05, with Filip in chat)
+
+Not part of the autonomous run: built in a Studio session after Filip's playtest, from his references and answers.
+
+| # | Decision | Why | Where |
+| --- | --- | --- | --- |
+| 22 | **The dorm buys through the phone and a truck**, not floor pads. Other locations still use pads until they are rebuilt. | Filip's new mechanic (`docs/superpowers/specs/2026-11-05-truck-delivery-design.md`). The dorm goes first, to test the loop. | `Services/Delivery`, `World/Truck`, `UI/Phone` |
+| 23 | **Cash paid for boxes not yet placed is saved as cash** (`PlayerState.inFlight`, added back in `snapshot`), instead of refunding on leave. No schema change. | It also covers a crash or an autosave mid-order, which the spec's refund did not. | `Services/PlayerState` |
+| 24 | **Carrying is a server weld**, not a client controller; pick-up and place are prompts the server checks. | Everyone sees the box, and no extra remotes. | `Services/Delivery` |
+| 25 | **The dorm is 36 x 32 studs** (was 24 x 20), laid out after Filip's reference, with 16 items: the reference's 12 plus lamp, disco ball, party lights and neon. Prices still come from `Pricing`, not the numbers on the image. The register fixture stays; the reference's "Cash register" is a feature item that doubles its capacity. | Filip: bigger rooms, more space; items may be added; prices as in the GDD. | `Config/Blockouts/Dorm`, `Config/Items` |
+| 26 | **A fifth location** from the neon-club reference (ticket desk, entrance gate, scanner, arcade, photo booth) goes between the house party and the underground club. Not built yet. | Filip confirmed it. Its prices fit between the two. | to do |
+| 27 | **Lighting mode**: `Lighting.Technology` is deprecated; `default.project.json` sets `LightingStyle = Realistic` and `PrioritizeLightingQuality = true`, the same look. | Game scripts can't write those properties. | `default.project.json` |
+
 ## Polish added on top (tune freely)
 
 These need no OK, but they're Filip's to like or change:

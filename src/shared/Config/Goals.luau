@@ -21,11 +21,11 @@ local Goals: { [string]: Types.Host } = {
 			},
 			{
 				id = "dorm_speaker",
-				text = "Buy the Small Speaker",
+				text = "Order the Small Speaker",
 				kind = "buy",
 				target = "dorm_speaker",
 				reward = 100,
-				line = "Now THAT's bass. The neighbours are gonna love us. Probably.",
+				line = "Now THAT's bass. The neighbours are gonna love us. Probably. Order the next thing, the truck's fast!",
 			},
 			{
 				id = "dorm_drop",
@@ -36,7 +36,7 @@ local Goals: { [string]: Types.Host } = {
 			},
 		},
 		lines = {
-			intro = "Yo, roomie! Step on the glowing pads to build our setup. The laptop's free!",
+			intro = "Yo, roomie! Open your phone (P) and order our setup. The laptop's free! The truck brings it, you carry it in.",
 			done = "This room is maxed out! Lena says her place is way bigger. Step on Move On!",
 			speakerBlown = "Uh... is the speaker supposed to smoke? Hold E on it, quick!",
 			speakerFixed = "Good as new. Mostly. Let's not tell the landlord.",

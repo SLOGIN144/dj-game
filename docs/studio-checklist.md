@@ -28,6 +28,19 @@ Filip's playtest.
 - [ ] Lighting is the old Future look: Roblox deprecated `Lighting.Technology` for `LightingStyle` and `PrioritizeLightingQuality`. Game scripts can't write them, so `default.project.json` sets `Realistic` and `true` through Rojo. Nothing to set by hand.
 - [ ] Note whether Workspace › StreamingEnabled is on. The code asks the server to stream the destination before every trip (`Travel.place`). If anything at the venue is missing on arrival, say so before trying fixes.
 
+## 0b. Phone orders and the truck (dorm)
+
+Checked in Studio on 2026-11-05 through the MCP, except the items marked "not checked".
+
+- [x] The phone button sits at the right edge and pulses until the first item is built; P opens the list (laptop FREE, then the next two).
+- [x] Ticking up to 3 items shows the total; Order takes the cash and closes the panel. The truck stops at the kerb about 12 s plus 3 s per extra item later and drives away.
+- [x] One labelled box per item lies on the pavement; the pick-up prompt shows with empty hands only, and the box floats in front of the character while carried.
+- [x] Every item has a glowing outline in the room with "Place: name"; only the carried box's outline shows its prompt.
+- [x] Placing builds the item with the build animation, income starts then, and the goals count it. After the last box the phone offers the next items.
+- [ ] Not checked: a second player sees the truck and boxes but no prompts; dying while carrying puts the box back on the pavement; leaving mid-order returns the cash on rejoin (needs saving on); touch.
+- [ ] Not checked by ear: no truck sound yet (`Sounds.luau` has no slot for it).
+- [ ] The first-time arrow: "Pick up" over the box and "Place here" over the outline (Guide).
+
 ## 1. Music that mixes itself (step 3)
 
 - [ ] On spawning, your plot's music starts within about 5 s. The first track starts 8 bars before its drop, so the first drop comes about 15 s in.

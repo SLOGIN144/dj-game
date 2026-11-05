@@ -6,6 +6,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Delivery = require(script.Parent.Delivery)
 local Economy = require(script.Parent.Economy)
 local Events = require(script.Parent.Events)
 local Items = require(ReplicatedStorage.Shared.Config.Items)
@@ -21,6 +22,7 @@ local DevTools = {}
 local CASH_MINUTES = 10 -- "cash" gives this many minutes of the location's full income
 
 local function finish(state: PlayerState.State)
+	Delivery.cancel(state) -- an order on its way would be built twice
 	local items: { Types.Item } = Items[state.locationId] or {}
 	for _, item in items do
 		if not state.bought[item.id] then

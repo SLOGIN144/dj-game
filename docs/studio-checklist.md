@@ -37,7 +37,8 @@ Checked in Studio on 2026-11-05 through the MCP, except the items marked "not ch
 - [x] One labelled box per item lies on the pavement; the pick-up prompt shows with empty hands only, and the box floats in front of the character while carried.
 - [x] Every item has a glowing outline in the room with "Place: name"; only the carried box's outline shows its prompt.
 - [x] Placing builds the item with the build animation, income starts then, and the goals count it. After the last box the phone offers the next items.
-- [ ] Not checked: a second player sees the truck and boxes but no prompts; dying while carrying puts the box back on the pavement; leaving mid-order returns the cash on rejoin (needs saving on); touch.
+- [x] Dying while carrying puts the box back on its pavement slot (found and fixed: it used to fall out of the world); F4 mid-order cancels it and refunds.
+- [ ] Not checked: a second player sees the truck and boxes but no prompts; leaving mid-order returns the cash on rejoin (needs saving on); touch.
 - [ ] Not checked by ear: no truck sound yet (`Sounds.luau` has no slot for it).
 - [ ] The first-time arrow: "Pick up" over the box and "Place here" over the outline (Guide).
 

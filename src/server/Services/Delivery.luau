@@ -187,8 +187,15 @@ local function dropBox(state: PlayerState.State, current: Active)
 	end
 	Orders.advance(current.order, carried, "delivered")
 	local box = current.boxes[carried]
-	if box then
+	if box and box.Parent then
 		setDown(box, PlotView.boxSpot(state.plot, slotOf(current, carried)))
+	else
+		-- The box was lost on the way (it fell out of the world with a ragdolling character): a new
+		-- one takes its place, so a paid-for item is never lost.
+		local thing = item(state.locationId, carried)
+		if thing then
+			current.boxes[carried] = PlotView.addBox(state.plot, thing, slotOf(current, carried))
+		end
 	end
 	publish(state, current)
 end
@@ -328,14 +335,27 @@ function Delivery.start()
 	ProximityPromptService.PromptTriggered:Connect(onPrompt)
 
 	-- A character that's removed (died, respawned) puts its box back on the pavement first.
+	-- It's dropped the moment they die (a ragdoll would take it out of the world), and again when
+	-- the character is removed, in case that came first.
 	local function watch(player: Player)
-		player.CharacterRemoving:Connect(function()
+		local function drop()
 			local state = PlayerState.get(player)
 			local current = active[player]
 			if state and current then
 				dropBox(state, current)
 			end
-		end)
+		end
+		local function track(character: Model)
+			local humanoid = character:WaitForChild("Humanoid", 10)
+			if humanoid and humanoid:IsA("Humanoid") then
+				humanoid.Died:Connect(drop)
+			end
+		end
+		player.CharacterRemoving:Connect(drop)
+		player.CharacterAdded:Connect(track)
+		if player.Character then
+			task.spawn(track, player.Character)
+		end
 	end
 	for _, player in Players:GetPlayers() do
 		watch(player)

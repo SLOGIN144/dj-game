@@ -1,6 +1,6 @@
 --!strict
 -- The settings panel (GDD: master volume, plus separate music and SFX sliders, and a
--- graphics-quality setting). A small button at the top right opens it; the sliders and the
+-- graphics-quality setting). A small button at the top left opens it; the sliders and the
 -- graphics switch apply at once (Controllers/Preferences), and the server saves them with the
 -- player's club.
 
@@ -99,16 +99,11 @@ function SettingsPanel.start()
 	gui.ResetOnSpawn = false
 	gui.DisplayOrder = 12
 
-	local open = Style.button(gui, "Open", "Settings", UDim2.fromOffset(104, 36), UDim2.new(1, -12, 0, 8))
-	open.AnchorPoint = Vector2.new(1, 0)
+	-- Top left, above the goal tracker: the top right is where Roblox shows its player list.
+	local open = Style.button(gui, "Open", "Settings", UDim2.fromOffset(104, 36), UDim2.fromOffset(12, 14))
 
-	local panel = Style.panel(
-		gui,
-		"Panel",
-		UDim2.fromOffset(360, 100 + 40 * #SLIDERS),
-		UDim2.new(1, -12, 0, 52),
-		Vector2.new(1, 0)
-	)
+	local panel =
+		Style.panel(gui, "Panel", UDim2.fromOffset(360, 100 + 40 * #SLIDERS), UDim2.fromOffset(12, 58), Vector2.zero)
 	Style.follow(Style.stroke(panel, Style.accent()), "Color")
 	panel.Visible = false
 	Style.label(panel, "Title", "Settings", UDim2.new(1, -70, 0, 26), UDim2.fromOffset(16, 10)).TextXAlignment =

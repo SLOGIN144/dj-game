@@ -105,7 +105,7 @@ Filip's playtest.
 ## 10. Leaderboard and settings
 
 - [ ] The billboard at the near end of the street lists the players in the server by total earned, with their location, every 5 s.
-- [ ] Settings (top right): the master, music and SFX sliders change the volume at once. Rejoin and they're as you left them.
+- [ ] Settings (top left): the master, music and SFX sliders change the volume at once. Rejoin and they're as you left them.
 - [ ] Graphics: Low draws at most 15 guests, switches the beams off and thins the confetti, CO2 and fireworks; High brings them back.
 
 ## 11. Saving

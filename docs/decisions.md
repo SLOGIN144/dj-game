@@ -42,6 +42,22 @@ and the Lune specs. `docs/studio-checklist.md` is the list to work through in St
 | 20 | **Studio-only testing shortcuts**: with the F2 overlay open, F3 gives cash, F4 finishes the location, F6 starts an event and F7 rests the DJs. The server only listens in Studio. | Testing four locations by playing through them would take about 9 hours. | `Services/DevTools.luau`, `UI/DebugOverlay.luau` |
 | 21 | **Cloud checks in the repo** (`tools/cloud/`): the Lune spec runner, the world build, a renderer, and a simulation that runs the real server and client together through a whole session. They're dev tools, not packages, and nothing in them ships. | They found a real start-up bug (the client waiting for remotes the server made late) that no type check could. Future sessions without Studio can run them. | `tools/cloud/README.md` |
 
+## Polish added on top (tune freely)
+
+These need no OK, but they're Filip's to like or change:
+
+| What | Where to tune |
+| --- | --- |
+| A gold guide arrow over the next thing to do (the free button, the register, the decks, Move On) | `UI/Guide.luau` |
+| The camera takes a short look at each new part when you buy standing still | `Controllers/Camera.luau` (`PEEK_*`) |
+| Each room has its own light while you're inside: purple dorm, warm house party, deep blue club with thicker haze | `Config/Skies.luau` |
+| Ibiza's sea is terrain water right behind the stage; the LED wall shows level bars to the music | `World/WaterLook.luau`, `Controllers/LedWall.luau` |
+| The street's empty lots have apartment blocks with shopfronts (VINYL, NOODLES, ARCADE, LAUNDRY); lamps glow warm orange | `World/StreetBlocks.luau`, `World/Street.luau` |
+| Guests have hair; they dance bigger during a star DJ's set | `Controllers/Guests.luau` |
+| A crowd sound that follows the guest count (silent until it has an ID) | `Controllers/CrowdAmbience.luau`, `Config/Sounds.luau` |
+| The club's bar shelves hold soda cans | `Config/Blockouts/Club.luau` |
+| Total cash earned also shows in Roblox's player list | `Services/Leaderboard.luau` |
+
 ## Not done (later, or needs Filip)
 
 - Rebirth and the world tour, offline earnings, a global leaderboard, B2B, club likes.

@@ -380,6 +380,9 @@ Code lives in files synced by Rojo, and the world lives in the Studio place file
 dj-game/
   CLAUDE.md                -- short: stack, rules, points to docs/GDD.md
   docs/GDD.md              -- this doc
+  docs/decisions.md        -- the calls made without Filip in the autonomous run, to review
+  docs/studio-checklist.md -- what to check in Studio
+  docs/art-pipeline.md     -- how imported models replace the blockouts
   default.project.json     -- Rojo mapping for the game place
   tagger.project.json      -- the Track Tagger place
   rokit.toml  selene.toml  stylua.toml
@@ -393,13 +396,17 @@ dj-game/
     server/   -> ServerScriptService.Server
       Services/ Plots, PlayerData, PlayerState, Economy, Shop, Progression, Travel, Music, Decks,
                 Events, StarDjs, Goals, TrackShop, Leaderboard, Settings, DevTools (Studio only)
-      World/    Street, StreetProps, Skyline, NightLook, Building, PlotView, PartFactory, Builder, Figures, Art
+      World/    Street, StreetProps, StreetBlocks, Skyline, NightLook, WaterLook, Building, PlotView,
+                PartFactory, Builder, Figures, Art
     client/   -> StarterPlayer.StarterPlayerScripts.Client
-      Controllers/ AudioEngine, BeatClock, PlotMixes, PlotMusic, Decks, Guests, LightShow, Effects,
-                   StarDjView, Ambience, JetGate, Camera, OwnPlot, Sfx, Volume, PromptFilter
-      UI/ Hud, DecksUI, TrackShop, DjBoard, Dialogue, GoalTracker, PadLabels, SettingsPanel, Fade, Style, DebugOverlay
+      Controllers/ AudioEngine, BeatClock, PlotMixes, PlotMusic, Decks, Guests, LightShow, LedWall,
+                   Effects, StarDjView, Ambience, CrowdAmbience, JetGate, Camera, OwnPlot, Sfx,
+                   Preferences, PromptFilter
+      UI/ Hud, DecksUI, TrackShop, DjBoard, Dialogue, GoalTracker, Guide, PadLabels, SettingsPanel,
+          Fade, Style, DebugOverlay
   tools/
     TrackTagger/           -- dev-only, never shipped
+    cloud/                 -- checks without Studio: Lune specs, world build, renderer, simulation
   tests/                   -- *.spec.luau, run on Play in the tagger place
 ```
 

@@ -8,6 +8,9 @@ return {
 	sign = Vector3.new(-25, 3.4, -37), -- to the side, so it never blocks the view into the room
 	register = Vector3.new(12, 0, -22),
 	buttonSlots = { Vector3.new(-7, 0, -14), Vector3.new(0, 0, -14), Vector3.new(7, 0, -14) },
+	-- Where a delivery truck leaves its boxes: on the pavement in front of the plot (its front edge is
+	-- at z = -40, the pavement runs from -40 to -46), standing on the pavement's top at y = -0.4.
+	boxSpots = { Vector3.new(-9, -0.4, -43), Vector3.new(0, -0.4, -43), Vector3.new(9, -0.4, -43) },
 	padSize = 5, -- width and depth of a button pad
 	moveOnSlot = 2, -- the button slot the Move On pad takes once a location is finished
 	-- Venues (Ibiza) are far from the street, out of sight of it: the first plot's at `start`,

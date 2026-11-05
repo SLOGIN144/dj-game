@@ -141,6 +141,9 @@ export type Blockout = {
 		photographer: Vector3?,
 	},
 	speakerItem: string?, -- the item the blown speaker event happens to
+	-- Where an ordered item goes, when its glowing outline shouldn't be the box of all its parts
+	-- (a strip that runs round the walls, lights in two corners): bottom centre and size, in plot space.
+	placements: { [string]: { at: Vector3, size: Vector3 } }?,
 	-- Where the buttons, the register and the spawn go, when not where Config/PlotLayout says,
 	-- and for a venue, where its jet back to the street stands (nose towards -X).
 	layout: { buttonSlots: { Vector3 }, register: Vector3, spawn: Vector3, jet: Vector3? }?,

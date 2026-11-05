@@ -132,7 +132,18 @@ Balance.Guests = {
 }
 
 Balance.Buttons = {
-	visible = 3, -- how many of the next items show as buttons
+	visible = 3, -- how many of the next items the phone lists to order
+}
+
+-- Phone orders and the delivery truck (docs/superpowers/specs/2026-11-05-truck-delivery-design.md).
+Balance.Delivery = {
+	maxItems = 3, -- items in one order, so never more than this many boxes
+	baseSeconds = 12, -- from ordering to the truck stopping at the kerb, for one item
+	perExtraSeconds = 3, -- more for each further item in the order
+	truckSpeed = 55, -- studs per second on the street
+	unloadSeconds = 2.5, -- the truck waits at the kerb after the boxes are down
+	pickupRange = 16, -- studs from a box within which the owner can pick it up
+	placeRange = 22, -- studs from an outline within which a carried box can be placed
 }
 
 Balance.World = {

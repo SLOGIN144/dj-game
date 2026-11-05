@@ -9,6 +9,7 @@
 -- (Balance.Guests: about 40 on PC, 15 on mobile or with low graphics), so a big crowd shows its
 -- front rows.
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -23,10 +24,12 @@ local PlotMusic = require(script.Parent.PlotMusic)
 local Sfx = require(script.Parent.Sfx)
 local TrackInfo = require(ReplicatedStorage.Shared.Music.TrackInfo)
 local Types = require(ReplicatedStorage.Shared.Types)
+local WishConfig = require(ReplicatedStorage.Shared.Config.Wishes)
 
 local Guests = {}
 
 local VIEW_DISTANCE = 200 -- studs from the camera within which guests move
+local BUBBLE_DISTANCE = 70 -- studs from the camera within which a wish bubble shows
 local WALK_SECONDS = 2.5
 local JUMP_SECONDS = 0.45
 local JUMP_HEIGHT = 1.1
@@ -76,6 +79,8 @@ type PlotGuests = {
 	settled: boolean,
 	wanted: number, -- the plot's "Guests" last frame, to hear a friend arrive
 	locationId: string?, -- the location the figures stand in
+	bubble: TextLabel?, -- the speech bubble of the plot's wish, drawn over the guest that wishes
+	seenWishes: number?, -- the plot's "WishCount" last frame, to cheer when one is granted
 }
 
 local plots: { [Model]: PlotGuests } = {}
@@ -266,6 +271,75 @@ local function animate(
 	end
 end
 
+-- The screen the wish bubbles are drawn on: ordinary UI placed over each guest's head every frame
+-- (a BillboardGui on a figure that is moved in bulk never showed).
+local bubbleScreen: ScreenGui? = nil
+
+local function bubbleParent(): ScreenGui
+	if not bubbleScreen then
+		local screen = Instance.new("ScreenGui")
+		screen.Name = "WishBubbles"
+		screen.ResetOnSpawn = false
+		screen.DisplayOrder = 3
+		screen.IgnoreGuiInset = true
+		screen.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+		bubbleScreen = screen
+	end
+	return bubbleScreen :: ScreenGui
+end
+
+local function newBubble(): TextLabel
+	local label = Instance.new("TextLabel")
+	label.Name = "WishBubble"
+	label.AnchorPoint = Vector2.new(0.5, 1)
+	label.Size = UDim2.fromOffset(170, 40)
+	label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextColor3 = Color3.fromRGB(30, 24, 44)
+	label.Font = Enum.Font.BuilderSansExtraBold
+	label.TextSize = 24
+	label.Visible = false
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 14)
+	corner.Parent = label
+	label.Parent = bubbleParent()
+	return label
+end
+
+-- The speech bubble of the plot's wish over the friend who wishes (Services/Wishes publishes
+-- "Wish", "WishGuest" and "WishEndsAt"), and a cheer from everyone when one is granted.
+local function wishBubble(plot: Model, entry: PlotGuests)
+	local count = plot:GetAttribute("WishCount")
+	if typeof(count) == "number" then
+		if entry.seenWishes and count > entry.seenWishes then
+			entry.jumpAt = os.clock()
+		end
+		entry.seenWishes = count
+	end
+	local kind = plot:GetAttribute("Wish")
+	local number = plot:GetAttribute("WishGuest")
+	local wish = if typeof(kind) == "string" then WishConfig[kind] else nil
+	local guest = if wish and typeof(number) == "number" then entry.guests[number] else nil
+	local camera = workspace.CurrentCamera
+	if not guest or not wish or not camera then
+		if entry.bubble then
+			entry.bubble.Visible = false
+		end
+		return
+	end
+	local bubble = entry.bubble or newBubble()
+	entry.bubble = bubble
+	local head = guest.parts[2].Position + Vector3.new(0, 2.4, 0)
+	local point, onScreen = camera:WorldToViewportPoint(head)
+	bubble.Visible = onScreen and point.Z > 0 and point.Z < BUBBLE_DISTANCE
+	if not bubble.Visible then
+		return
+	end
+	bubble.Position = UDim2.fromOffset(point.X, point.Y)
+	local endsAt = plot:GetAttribute("WishEndsAt")
+	local left = if typeof(endsAt) == "number" then math.max(0, math.ceil(endsAt - workspace:GetServerTimeNow())) else 0
+	bubble.Text = string.format("%s  %ds", wish.text, left)
+end
+
 -- Every guest on a plot jumps, e.g. on a Perfect drop press.
 function Guests.cheer(plot: Model)
 	local entry = plots[plot]
@@ -280,7 +354,15 @@ function Guests.start()
 	folder.Parent = workspace
 
 	for _, plot in PlotMixes.plots() do
-		plots[plot] = { guests = {}, jumpAt = -math.huge, settled = false, wanted = 0, locationId = nil }
+		plots[plot] = {
+			guests = {},
+			jumpAt = -math.huge,
+			settled = false,
+			wanted = 0,
+			locationId = nil,
+			bubble = nil,
+			seenWishes = nil,
+		}
 	end
 	local mobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
@@ -319,6 +401,7 @@ function Guests.start()
 			local locationId = PlotSpace.locationId(plot)
 			local blockout = if locationId then Blockouts[locationId] else nil
 			fit(plot, entry, blockout, locationId, allowed[plot] or 0)
+			wishBubble(plot, entry)
 			if blockout and #entry.guests > 0 then
 				animate(plot, entry, blockout, now, parts, frames)
 			end

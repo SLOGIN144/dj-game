@@ -135,6 +135,17 @@ Balance.Buttons = {
 	visible = 3, -- how many of the next items the phone lists to order
 }
 
+-- Guest wishes (Config/Wishes, Services/Wishes): one at a time, while the owner is in their club.
+Balance.Wishes = {
+	minSeconds = 70, -- seconds in the club between a granted or lapsed wish and the next
+	maxSeconds = 130,
+	waitSeconds = 75, -- how long a wish stays up
+	tipSeconds = 45, -- the tip, in seconds of the plot's base income
+	minTip = 5,
+	minGuests = 2, -- wishes only start once this many friends are there
+	collectSeconds = 12, -- a "collect" wish asks for the register once it holds this many seconds of income
+}
+
 -- Phone orders and the delivery truck (docs/superpowers/specs/2026-11-05-truck-delivery-design.md).
 Balance.Delivery = {
 	maxItems = 3, -- items in one order, so never more than this many boxes

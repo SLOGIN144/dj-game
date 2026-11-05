@@ -53,6 +53,14 @@ Checked in Studio on 2026-11-05 through the MCP as the owner. Not checked: a sec
 - [ ] Not checked: a visitor entering your floor, hearing the music, and being unable to use your prompts; visitors moved out when you move on or leave; visitor dying inside respawning at their own plot.
 - [ ] The guide arrow reads "Go inside" at the door when something is to be carried in (code written, not seen).
 
+## 0d. Guests with wishes
+
+Checked in Studio on 2026-11-05 as the owner in the dorm (F6 brings a wish up at once).
+
+- [x] With 2+ friends around and the owner in their floor, one guest shows a bubble ("Drop it!", "New tune!", "More stuff!" or "Cash out!") with a countdown, and the HUD floats "A guest wants: ...".
+- [x] Doing it grants the wish (buying a track was tested): the bubble goes, the guests cheer, "Wish granted!" and a tip of about 45 s of income arrive.
+- [ ] Not checked: the other three wishes, a wish lapsing after 75 s, wishes while Move On resets the floor, two players.
+
 ## 1. Music that mixes itself (step 3)
 
 - [ ] On spawning, your plot's music starts within about 5 s. The first track starts 8 bars before its drop, so the first drop comes about 15 s in.

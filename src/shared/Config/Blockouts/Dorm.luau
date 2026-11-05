@@ -395,9 +395,10 @@ local Dorm: Types.Blockout = {
 	speakerItem = "dorm_speaker",
 
 	-- A floor behind the building's door: you arrive just inside it, the exit door fills the doorway,
-	-- the Move On pad stands in the front, and the register waits in the corner by the door.
+	-- the Move On pad (slot 2) stands to the right of the rug, away from the arrival spot so entering a
+	-- finished floor never moves you on, and the register waits in the corner by the door.
 	layout = {
-		buttonSlots = { v(-7, 0, 3), v(0, 0, 3), v(7, 0, 3) },
+		buttonSlots = { v(-8, 0, 3), v(8, 0, 13), v(-9, 0, 20) },
 		register = v(-12, 0, -1.5),
 		spawn = v(0, 0, 0.8),
 		exit = v(0, 0.2, -4.4),

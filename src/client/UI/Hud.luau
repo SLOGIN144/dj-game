@@ -15,6 +15,7 @@ local OwnPlot = require(script.Parent.Parent.Controllers.OwnPlot)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Sfx = require(script.Parent.Parent.Controllers.Sfx)
 local Style = require(script.Parent.Style)
+local WishConfig = require(ReplicatedStorage.Shared.Config.Wishes)
 
 local Hud = {}
 
@@ -170,6 +171,27 @@ function Hud.start()
 			Hud.float("+" .. Format.money(amount), Style.GOOD)
 			Sfx.play("cash")
 		end
+	end)
+
+	-- A guest's wish comes up, and is granted (Services/Wishes, the bubble over the guest is in
+	-- Controllers/Guests).
+	task.spawn(function()
+		local plot = OwnPlot.wait()
+		local granted = plot:GetAttribute("WishCount")
+		plot:GetAttributeChangedSignal("Wish"):Connect(function()
+			local kind = plot:GetAttribute("Wish")
+			local wish = if typeof(kind) == "string" then WishConfig[kind] else nil
+			if wish then
+				Hud.float("A guest wants: " .. wish.text, Style.GOLD)
+			end
+		end)
+		plot:GetAttributeChangedSignal("WishCount"):Connect(function()
+			local count = plot:GetAttribute("WishCount")
+			if typeof(count) == "number" and typeof(granted) == "number" and count > granted then
+				Hud.float("Wish granted!", Style.GOOD)
+			end
+			granted = count
+		end)
 	end)
 
 	gui.Parent = player:WaitForChild("PlayerGui")

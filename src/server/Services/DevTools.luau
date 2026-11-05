@@ -16,6 +16,7 @@ local Pricing = require(ReplicatedStorage.Shared.Economy.Pricing)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Shop = require(script.Parent.Shop)
 local Types = require(ReplicatedStorage.Shared.Types)
+local Wishes = require(script.Parent.Wishes)
 
 local DevTools = {}
 
@@ -51,6 +52,7 @@ function DevTools.start()
 			finish(state)
 		elseif command == "event" then
 			Events.soon(state)
+			Wishes.soon(state)
 		elseif command == "rest" then
 			table.clear(state.djRestUntil)
 			PlayerState.mirror(state)

@@ -1,9 +1,8 @@
 --!strict
 -- The building behind each plot's room, one stage per location (GDD: plots): it grows with its
 -- owner's career, so anyone on the street can see how far a player has come. A free plot shows the
--- first stage with its lights off. Positions are plot-relative; the front face sits just behind
+-- first stage with only a few windows lit. Positions are plot-relative; the front face sits just behind
 -- the room's back wall. Model sheet: "Street" (building_dorm, building_apartment, building_tower).
--- A free plot shows the first stage with only a few windows lit.
 
 export type Stage = {
 	floors: number,

@@ -77,9 +77,14 @@ export type Location = {
 	sky: string?, -- a look from Config/Skies while the camera is in the location's room or venue
 }
 
+-- How rare a star DJ is: it sets which crates they come out of and how often (Config/Crates).
+export type Rarity = "common" | "rare" | "epic" | "legendary"
+
 -- A fictional star DJ the player can book for a guest set (GDD: star DJs). Never a real DJ.
 export type StarDj = {
 	id: string,
+	rarity: Rarity,
+	starter: boolean?, -- owned from the start, once the location has a booking board
 	name: string,
 	style: string, -- a few words about their sound, for the booking board
 	location: string, -- the location that unlocks them; they stay bookable after it

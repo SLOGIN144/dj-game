@@ -8,13 +8,15 @@ local Types = require(script.Parent.Parent.Types)
 
 local Booking = {}
 
--- Why a booking can't happen: the DJ isn't unlocked yet, the location has no booking board,
--- a set is playing, the DJ is resting, or the player can't afford them.
-export type Refusal = "locked" | "noBoard" | "playing" | "resting" | "cash"
+-- Why a booking can't happen: the DJ isn't unlocked yet, the location has no booking board, the
+-- player doesn't have the DJ (they come from crates), a set is playing, the DJ is resting, or the
+-- player can't afford them.
+export type Refusal = "locked" | "noBoard" | "notOwned" | "playing" | "resting" | "cash"
 
 export type Situation = {
 	locationId: string,
 	hasBoard: boolean, -- the location's booking board is bought
+	owned: boolean, -- the player has this DJ (a starter, or one from a crate)
 	cash: number,
 	playing: boolean, -- a star DJ's set is on right now
 	restUntil: number?, -- when this DJ can be booked again (os.time)
@@ -50,6 +52,8 @@ function Booking.refusal(dj: Types.StarDj, situation: Situation): Refusal?
 		return "locked"
 	elseif not situation.hasBoard then
 		return "noBoard"
+	elseif not situation.owned then
+		return "notOwned"
 	elseif situation.playing then
 		return "playing"
 	elseif situation.restUntil and situation.now < situation.restUntil then
@@ -67,6 +71,8 @@ function Booking.explain(refusal: Refusal, dj: Types.StarDj): string
 		return "Unlocks at the " .. (if location then location.name else dj.location)
 	elseif refusal == "noBoard" then
 		return "Buy this location's booking board first"
+	elseif refusal == "notOwned" then
+		return "Not yet yours: open crates to find " .. dj.name
 	elseif refusal == "playing" then
 		return "A guest set is on right now"
 	elseif refusal == "resting" then

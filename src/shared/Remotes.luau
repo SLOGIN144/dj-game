@@ -19,6 +19,8 @@ local NAMES = {
 	"Travel", -- server -> player: fade the screen out ("out") or back in ("in"), with a line of text and a sound
 	"OpenBoard", -- server -> owner: open the star DJ booking board
 	"BookDj", -- client -> server: book a star DJ
+	"OpenCrate", -- client -> server: open a DJ crate at the booking board
+	"CrateResult", -- server -> owner: the DJ a crate gave (or why it could not be opened)
 	"DjNotice", -- server -> owner: a booking was refused, or a guest set started or ended
 	"SetSettings", -- client -> server: the player's settings changed (volumes, low graphics)
 	"PlaceOrder", -- client -> server: order the items in the phone's cart

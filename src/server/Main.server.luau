@@ -3,6 +3,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Crates = require(script.Parent.Services.Crates)
 local Decks = require(script.Parent.Services.Decks)
 local Delivery = require(script.Parent.Services.Delivery)
 local DevTools = require(script.Parent.Services.DevTools)
@@ -36,6 +37,7 @@ Wishes.start()
 Travel.start()
 Progression.start()
 StarDjs.start()
+Crates.start()
 Settings.start()
 DevTools.start()
 Leaderboard.start(StreetProps.screen(workspace:WaitForChild("Street")))

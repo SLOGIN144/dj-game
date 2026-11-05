@@ -61,6 +61,14 @@ Checked in Studio on 2026-11-05 as the owner in the dorm (F6 brings a wish up at
 - [x] Doing it grants the wish (buying a track was tested): the bubble goes, the guests cheer, "Wish granted!" and a tip of about 45 s of income arrive.
 - [ ] Not checked: the other three wishes, a wish lapsing after 75 s, wishes while Move On resets the floor, two players.
 
+## 0e. DJ crates
+
+Checked in Studio on 2026-11-05 at the house party. Not checked: saving the owned DJs (needs a published place), a rare or legendary roll, a second player.
+
+- [x] The DJ Board shows two crate buttons with their price (it grows with the location) and the odds, and every DJ with its rarity; a DJ you do not have shows "Find in crates".
+- [x] Opening a crate takes the cash and shows the reveal; a DJ you already have pays back 40% ("Already yours").
+- [ ] A new DJ appears as bookable and can be booked for a set; the owned list comes back after Stop and Play (needs saving on).
+
 ## 1. Music that mixes itself (step 3)
 
 - [ ] On spawning, your plot's music starts within about 5 s. The first track starts 8 bars before its drop, so the first drop comes about 15 s in.

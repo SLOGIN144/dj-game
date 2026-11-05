@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 
 local Balance = require(ReplicatedStorage.Shared.Config.Balance)
 local Booking = require(ReplicatedStorage.Shared.Economy.Booking)
+local Crates = require(ReplicatedStorage.Shared.Economy.Crates)
 local Items = require(ReplicatedStorage.Shared.Config.Items)
 local Music = require(script.Parent.Music)
 local PlayerState = require(script.Parent.PlayerState)
@@ -110,6 +111,7 @@ local function book(player: Player, djId: unknown)
 	local refusal = Booking.refusal(dj, {
 		locationId = state.locationId,
 		hasBoard = PlayerState.hasFeature(state, "booking"),
+		owned = Crates.isOwned(dj, state.ownedDjs),
 		cash = state.cash,
 		playing = state.starDj ~= nil,
 		restUntil = state.djRestUntil[dj.id],

@@ -135,6 +135,11 @@ Balance.Buttons = {
 	visible = 3, -- how many of the next items the phone lists to order
 }
 
+-- DJ crates (Config/Crates, Economy/Crates).
+Balance.Crates = {
+	duplicateShare = 0.4, -- a DJ you already have pays back this share of the crate's price
+}
+
 -- Guest wishes (Config/Wishes, Services/Wishes): one at a time, while the owner is in their club.
 Balance.Wishes = {
 	minSeconds = 70, -- seconds in the club between a granted or lapsed wish and the next

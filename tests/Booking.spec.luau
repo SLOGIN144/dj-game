@@ -12,6 +12,7 @@ local function situation(overrides: { [string]: any })
 	local base = {
 		locationId = "house",
 		hasBoard = true,
+		owned = true,
 		cash = 1e12,
 		playing = false,
 		restUntil = nil,
@@ -38,6 +39,7 @@ return {
 	["each thing that stands in the way is named"] = function()
 		T.equal(Booking.refusal(KIKO, situation({ locationId = "dorm" })), "locked")
 		T.equal(Booking.refusal(KIKO, situation({ hasBoard = false })), "noBoard")
+		T.equal(Booking.refusal(KIKO, situation({ owned = false })), "notOwned")
 		T.equal(Booking.refusal(KIKO, situation({ playing = true })), "playing")
 		T.equal(Booking.refusal(KIKO, situation({ restUntil = 1001 })), "resting")
 		T.equal(Booking.refusal(KIKO, situation({ restUntil = 1000 })), nil, "rested exactly on time")

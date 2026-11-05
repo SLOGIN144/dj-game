@@ -70,7 +70,7 @@ return {
 	["a version 1 save loads with no goal progress, rested DJs and full volume"] = function()
 		local data =
 			SaveSchema.migrate({ version = 1, cash = 10, location = "house", boughtItems = { "house_djtable" } })
-		T.equal(data.version, 2)
+		T.equal(data.version, SaveSchema.VERSION)
 		T.equal(data.location, "house")
 		T.equal(next(data.goalProgress), nil)
 		T.equal(next(data.djRestUntil), nil)

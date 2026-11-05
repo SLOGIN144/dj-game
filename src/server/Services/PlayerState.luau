@@ -37,6 +37,7 @@ export type State = {
 	goalsDone: { [string]: boolean }, -- the host character's goals finished
 	goalProgress: { [string]: number }, -- counted goals on their way, by goal id
 	djRestUntil: { [string]: number }, -- star DJ id -> when they can be booked again (os.time)
+	ownedDjs: { [string]: boolean }, -- star DJs found in crates (a starter is always owned)
 	starDj: StarDjSet?, -- the star DJ playing a guest set right now
 	settings: SaveSchema.Settings,
 	stats: Stats,
@@ -75,6 +76,7 @@ function PlayerState.create(player: Player, plot: Model, saved: SaveSchema.SaveD
 		goalsDone = set(saved.goalsDone),
 		goalProgress = table.clone(saved.goalProgress),
 		djRestUntil = table.clone(saved.djRestUntil),
+		ownedDjs = set(saved.ownedDjs),
 		starDj = nil,
 		settings = table.clone(saved.settings),
 		stats = table.clone(saved.stats),
@@ -108,6 +110,7 @@ function PlayerState.snapshot(state: State): SaveSchema.SaveData
 		stats = table.clone(state.stats),
 		goalProgress = table.clone(state.goalProgress),
 		djRestUntil = table.clone(state.djRestUntil),
+		ownedDjs = list(state.ownedDjs),
 		settings = table.clone(state.settings),
 	}
 end
@@ -166,6 +169,7 @@ end
 function PlayerState.mirror(state: State)
 	state.player:SetAttribute("OwnedTracks", ids(state.ownedTracks))
 	state.player:SetAttribute("GoalsDone", ids(state.goalsDone))
+	state.player:SetAttribute("OwnedDjs", ids(state.ownedDjs))
 	state.player:SetAttribute("GoalProgress", pairsText(state.goalProgress))
 	local rests = {}
 	for djId, at in state.djRestUntil do

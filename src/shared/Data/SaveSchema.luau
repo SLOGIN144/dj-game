@@ -6,6 +6,9 @@
 --   Version 1 (approved by Filip on 2026-11-04): cash, location, items, tracks, goals, register.
 --   Version 2 (2026-11-04, autonomous run; see docs/decisions.md): counted goal progress, star DJ
 --   rest times and the settings (volumes, low graphics). Version 1 saves load with all three empty.
+--   Version 3 (2026-11-05, written while Filip was away; waiting for his OK, see docs/decisions.md):
+--   the star DJs the player has found in crates. Older saves load with none (starter DJs are always
+--   theirs).
 
 local Balance = require(script.Parent.Parent.Config.Balance)
 local Goals = require(script.Parent.Parent.Config.Goals)
@@ -17,7 +20,7 @@ local Types = require(script.Parent.Parent.Types)
 
 local SaveSchema = {}
 
-SaveSchema.VERSION = 2
+SaveSchema.VERSION = 3
 
 export type Stats = { perfectDrops: number, goodDrops: number, eventsDone: number, playSeconds: number }
 
@@ -33,6 +36,7 @@ export type SaveData = {
 	stats: Stats,
 	goalProgress: { [string]: number }, -- counted goals at the current location, by goal id
 	djRestUntil: { [string]: number }, -- star DJ id -> when they can be booked again (os.time)
+	ownedDjs: { string }, -- star DJs found in crates (a starter is always owned)
 	settings: Settings,
 }
 
@@ -52,6 +56,7 @@ function SaveSchema.default(): SaveData
 		stats = { perfectDrops = 0, goodDrops = 0, eventsDone = 0, playSeconds = 0 },
 		goalProgress = {},
 		djRestUntil = {},
+		ownedDjs = {},
 		settings = { masterVolume = 1, musicVolume = 1, sfxVolume = 1, lowGraphics = false },
 	}
 end
@@ -183,6 +188,7 @@ function SaveSchema.sanitize(raw: { [string]: any }): SaveData
 		},
 		goalProgress = counts(raw.goalProgress, isGoal, true),
 		djRestUntil = counts(raw.djRestUntil, isDj, false),
+		ownedDjs = strings(raw.ownedDjs, isDj),
 		settings = SaveSchema.cleanSettings(raw.settings),
 	}
 end
@@ -199,6 +205,9 @@ function SaveSchema.migrate(raw: any): SaveData
 		raw.goalProgress = {}
 		raw.djRestUntil = {}
 		raw.settings = nil
+	end
+	if version < 3 then
+		raw.ownedDjs = {} -- version 3 added the DJs from crates; none yet
 	end
 	return SaveSchema.sanitize(raw)
 end

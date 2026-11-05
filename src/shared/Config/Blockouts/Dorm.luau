@@ -1,6 +1,6 @@
 --!strict
 -- The dorm room blockout, laid out after the dorm model sheet (docs/concept/dorm.webp and Filip's
--- reference of 2026-11-05): an open-front room, 36 x 32 studs, with two low wall stubs at the front,
+-- reference of 2026-11-05): a closed room, 36 x 32 studs, a floor behind the building's door,
 -- the night window and desk on the back wall, Max's bed and desk on the left wall and a beanbag
 -- corner, fridge, window and till on the right. "Left" is as seen from the street, which looks along
 -- +Z: the left wall is at +X and the right wall at -X. The room spans x -18..18, z -4..28, floor top
@@ -107,10 +107,11 @@ local shell: { Types.PartSpec } = {
 	part(v(38, 14, 1), v(0, 7, 28.5), WALL),
 	part(v(1, 14, 33), v(18.5, 7, 12), WALL),
 	part(v(1, 14, 33), v(-18.5, 7, 12), WALL),
-	part(v(14, 2.2, 1), v(11.5, 1.1, -4.5), WALL),
-	part(v(14, 2.2, 1), v(-11.5, 1.1, -4.5), WALL),
-	part(v(14.4, 0.3, 1.2), v(11.5, 2.35, -4.5), TRIM),
-	part(v(14.4, 0.3, 1.2), v(-11.5, 2.35, -4.5), TRIM),
+	-- The front wall, with a doorway in the middle: the exit door (World/PlotView) fills it
+	part(v(16, 14, 1), v(10.5, 7, -4.5), WALL),
+	part(v(16, 14, 1), v(-10.5, 7, -4.5), WALL),
+	part(v(5, 5.4, 1), v(0, 11.3, -4.5), WALL),
+	part(v(36, 0.4, 0.1), v(0, 0.4, -3.95), TRIM),
 	part(v(36, 0.4, 0.1), v(0, 0.4, 27.95), TRIM),
 	part(v(0.1, 0.4, 32), v(17.95, 0.4, 12), TRIM),
 	part(v(0.1, 0.4, 32), v(-17.95, 0.4, 12), TRIM),
@@ -162,12 +163,12 @@ local shell: { Types.PartSpec } = {
 	part(v(1, 1, 1), v(0, 12, 12), DARK, {
 		transparency = 1,
 		collide = false,
-		light = { colour = rgb(255, 210, 170), brightness = 1.1, range = 45 },
+		light = { colour = rgb(255, 210, 170), brightness = 1.0, range = 50 },
 	}),
 	part(v(1, 1, 1), v(0, 12, 23), DARK, {
 		transparency = 1,
 		collide = false,
-		light = { colour = rgb(255, 210, 170), brightness = 0.8, range = 36 },
+		light = { colour = rgb(255, 210, 170), brightness = 0.7, range = 40 },
 	}),
 }
 
@@ -392,6 +393,15 @@ local Dorm: Types.Blockout = {
 	},
 
 	speakerItem = "dorm_speaker",
+
+	-- A floor behind the building's door: you arrive just inside it, the exit door fills the doorway,
+	-- the Move On pad stands in the front, and the register waits in the corner by the door.
+	layout = {
+		buttonSlots = { v(-7, 0, 3), v(0, 0, 3), v(7, 0, 3) },
+		register = v(-12, 0, -1.5),
+		spawn = v(0, 0, 0.8),
+		exit = v(0, 0.2, -4.4),
+	},
 
 	-- Where an ordered item's outline goes when its parts spread over the room.
 	placements = {

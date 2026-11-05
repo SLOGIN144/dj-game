@@ -42,6 +42,17 @@ Checked in Studio on 2026-11-05 through the MCP, except the items marked "not ch
 - [ ] Not checked by ear: no truck sound yet (`Sounds.luau` has no slot for it).
 - [ ] The first-time arrow: "Pick up" over the box and "Place here" over the outline (Guide).
 
+## 0c. The building and its door (dorm)
+
+Checked in Studio on 2026-11-05 through the MCP as the owner. Not checked: a second player.
+
+- [x] The street shows a facade with a glowing door and lit windows; its Enter prompt is on once the plot has an owner.
+- [x] Enter fades and puts you just inside your dorm floor, a closed room with a window; the camera stays inside (the doors are solid, so it zooms in instead of slipping out). The exit door takes you back to the street. Both prompts show only while the door is on screen, so turn towards it.
+- [x] Ordering works from inside and outside; boxes land on the pavement; a box carried through the door arrives with you and is placed at its outline inside.
+- [x] Move On from the dorm lands you on the street spawn of the house party (an open room on the plot until it is converted); the door goes off. The old dorm floor is removed.
+- [ ] Not checked: a visitor entering your floor, hearing the music, and being unable to use your prompts; visitors moved out when you move on or leave; visitor dying inside respawning at their own plot.
+- [ ] The guide arrow reads "Go inside" at the door when something is to be carried in (code written, not seen).
+
 ## 1. Music that mixes itself (step 3)
 
 - [ ] On spawning, your plot's music starts within about 5 s. The first track starts 8 bars before its drop, so the first drop comes about 15 s in.

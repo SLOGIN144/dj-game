@@ -14,7 +14,13 @@ local PlotSpace = {}
 
 -- Where the buttons, the register and the spawn go, relative to the location's origin, and for a
 -- venue, its jet back to the street.
-export type Layout = { buttonSlots: { Vector3 }, register: Vector3, spawn: Vector3, jet: Vector3? }
+export type Layout = {
+	buttonSlots: { Vector3 },
+	register: Vector3,
+	spawn: Vector3,
+	jet: Vector3?,
+	exit: Vector3?,
+}
 
 function PlotSpace.location(locationId: string?): Types.Location?
 	for _, location in Locations do
@@ -37,6 +43,13 @@ function PlotSpace.isVenue(locationId: string?): boolean
 	return location ~= nil and location.space == "venue"
 end
 
+-- Whether the location is a floor behind the building's door (anyone may enter it) rather than
+-- a venue reached by the jet.
+function PlotSpace.isDoor(locationId: string?): boolean
+	local location = PlotSpace.location(locationId)
+	return location ~= nil and location.space == "venue" and location.door == true
+end
+
 -- Where the venue of the plot with this index goes: far from the street, one beside the other.
 function PlotSpace.venueOrigin(plotIndex: number): CFrame
 	return CFrame.new(PlotLayout.venues.start + PlotLayout.venues.spacing * (plotIndex - 1))
@@ -48,9 +61,15 @@ function PlotSpace.origin(plot: Model): CFrame
 	return if typeof(venue) == "CFrame" then venue else plot:GetPivot()
 end
 
--- Whether the plot's location is away at its venue right now.
+-- Whether the plot's location is built away from the street right now (a floor behind the door or a
+-- jet venue).
 function PlotSpace.away(plot: Model): boolean
 	return typeof(plot:GetAttribute("SpaceOrigin")) == "CFrame"
+end
+
+-- Whether the plot's location is a jet venue (Ibiza) the owner is away at.
+function PlotSpace.jetAway(plot: Model): boolean
+	return PlotSpace.away(plot) and not PlotSpace.isDoor(PlotSpace.locationId(plot))
 end
 
 function PlotSpace.layout(locationId: string?): Layout

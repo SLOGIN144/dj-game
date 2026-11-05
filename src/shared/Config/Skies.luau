@@ -20,10 +20,10 @@ local Skies: { [string]: Sky } = {
 	-- The dorm: a dark student room, purple LED glow (docs/concept/dorm.webp).
 	dormRoom = {
 		clockTime = 0,
-		brightness = 1,
-		ambient = rgb(38, 28, 62),
-		outdoorAmbient = rgb(54, 44, 92),
-		exposure = 0.1,
+		brightness = 1.1,
+		ambient = rgb(50, 40, 84),
+		outdoorAmbient = rgb(66, 54, 104),
+		exposure = 0.12,
 		haze = {
 			colour = rgb(96, 72, 156),
 			decay = rgb(42, 28, 84),

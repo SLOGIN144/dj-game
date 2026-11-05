@@ -32,7 +32,7 @@ function JetGate.start()
 		local plot = OwnPlot.wait()
 		local name = venueName()
 		local function update()
-			local open = PlotSpace.away(plot)
+			local open = PlotSpace.jetAway(plot)
 			prompt.ActionText = if open then "Fly to " .. name else "Locked"
 			if lock and lock:IsA("BasePart") then
 				lock.Color = if open then OPEN else SHUT

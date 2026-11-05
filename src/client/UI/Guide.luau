@@ -69,19 +69,28 @@ local function goalTarget(plot: Model, locationId: string, goal: Types.Goal): (B
 	return nil, nil
 end
 
--- What to point at: Move On, else the box to pick up or the outline to put it on, else the first
--- goal with a target. (Waiting for the truck, or choosing on the phone, has nothing in the world to
+-- What to point at: outside a floor behind the door, the box to pick up (or the door, once there is
+-- something to carry in); inside, Move On, else the outline to put the box on, else the first goal
+-- with a target. (Waiting for the truck, or choosing on the phone, has nothing in the world to
 -- point at: the phone button pulses until the first order.)
-local function target(plot: Model): (BasePart?, string?)
+local function target(plot: Model, position: Vector3?): (BasePart?, string?)
 	local locationId = PlotSpace.locationId(plot)
 	if not locationId then
 		return nil, nil
+	end
+	local order = player:GetAttribute("OrderState")
+	if PlotSpace.isDoor(locationId) and position and not PlotSpace.contains(plot, position) then
+		if order == "ready" then
+			return find(plot:FindFirstChild("Boxes"), "Body"), "Pick up"
+		elseif order == "transit" then
+			return nil, nil
+		end
+		return find(plot:FindFirstChild("Door"), "DoorPanel"), "Go inside"
 	end
 	local moveOn = find(plot:FindFirstChild("Pads"), "Pad_MoveOn")
 	if moveOn then
 		return moveOn, "Move on"
 	end
-	local order = player:GetAttribute("OrderState")
 	if order == "ready" then
 		return find(plot:FindFirstChild("Boxes"), "Body"), "Pick up"
 	elseif order == "carrying" then
@@ -129,9 +138,9 @@ function Guide.start()
 		since += dt
 		if since >= CHECK_EVERY then
 			since = 0
-			local part, label = target(plot)
 			local character = player.Character
 			local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
+			local part, label = target(plot, if root and root:IsA("BasePart") then root.Position else nil)
 			if
 				part
 				and root

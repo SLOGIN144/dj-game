@@ -161,8 +161,8 @@ function Delivery.order(state: PlayerState.State, requested: unknown): (boolean,
 	if active[state.player] then
 		return false, "busy"
 	end
-	if PlotSpace.away(state.plot) then
-		return false, "away" -- the room is at a venue; a truck on the street couldn't reach it
+	if PlotSpace.jetAway(state.plot) then
+		return false, "away" -- the room is at the jet venue; a truck on the street couldn't reach it
 	end
 	local effects = Pricing.effects(state.locationId)
 	local cart, why = Orders.validate(state.locationId, state.bought, state.cash, requested, effects)

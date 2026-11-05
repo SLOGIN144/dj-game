@@ -36,7 +36,7 @@ local Goals: { [string]: Types.Host } = {
 			},
 		},
 		lines = {
-			intro = "Yo, roomie! Open your phone (P) and order our setup. The laptop's free! The truck brings it, you carry it in.",
+			intro = "Yo, roomie! Open your phone (P) and order our setup. The laptop's free! The truck brings it, you carry it inside.",
 			done = "This room is maxed out! Lena says her place is way bigger. Step on Move On!",
 			speakerBlown = "Uh... is the speaker supposed to smoke? Hold E on it, quick!",
 			speakerFixed = "Good as new. Mostly. Let's not tell the landlord.",

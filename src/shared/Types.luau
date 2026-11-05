@@ -69,6 +69,9 @@ export type Location = {
 	lights: { Color3 }, -- the light show's palette; the first is the location's own colour
 	guests: { min: number, max: number }, -- guests shown, from no income to a finished location
 	space: Space,
+	-- A floor behind the building's door: built in the plot's own space like a venue, but entered through the
+	-- door by anyone and left by its exit door; the owner's spawn stays on the street. No jet.
+	door: boolean?,
 	spaceSize: Vector3, -- the area the location's music and events cover, around its origin
 	events: { EventKind }, -- the club events that can happen here
 	sky: string?, -- a look from Config/Skies while the camera is in the location's room or venue
@@ -145,8 +148,9 @@ export type Blockout = {
 	-- (a strip that runs round the walls, lights in two corners): bottom centre and size, in plot space.
 	placements: { [string]: { at: Vector3, size: Vector3 } }?,
 	-- Where the buttons, the register and the spawn go, when not where Config/PlotLayout says,
-	-- and for a venue, where its jet back to the street stands (nose towards -X).
-	layout: { buttonSlots: { Vector3 }, register: Vector3, spawn: Vector3, jet: Vector3? }?,
+	-- and for a venue, where its jet back to the street stands (nose towards -X). For a floor behind a door,
+	-- `spawn` is where one arrives inside and `exit` is where its exit door stands.
+	layout: { buttonSlots: { Vector3 }, register: Vector3, spawn: Vector3, jet: Vector3?, exit: Vector3? }?,
 }
 
 -- What a goal counts: collecting from the register, buying a given item, catching a drop

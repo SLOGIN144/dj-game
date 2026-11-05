@@ -80,6 +80,7 @@ local function release(player: Player, onReleased: (PlayerState.State) -> ())
 	local snapshot = PlayerState.snapshot(state)
 	task.spawn(PlayerData.save, player.UserId, snapshot, true)
 	onReleased(state)
+	Travel.ejectVisitors(state.plot, player) -- anyone inside their floor goes back to the street
 	PlotView.clear(state.plot)
 	PlotView.setOwner(state.plot, nil)
 	PlayerState.remove(player)

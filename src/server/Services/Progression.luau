@@ -34,7 +34,7 @@ function Progression.moveOn(state: PlayerState.State)
 		return
 	end
 	moving[player] = true
-	local text = if location.space == "venue"
+	local text = if location.space == "venue" and not location.door
 		then "Flying to " .. location.name .. "..."
 		else "Moving on to the " .. location.name .. "..."
 	Travel.move(player, text, function(): CFrame?
@@ -42,6 +42,7 @@ function Progression.moveOn(state: PlayerState.State)
 			return nil -- they left while the screen faded
 		end
 		Progression.leaving:fire(state)
+		Travel.ejectVisitors(state.plot, player) -- the old floor is sealed: nobody stays in it
 		state.locationId = nextId
 		state.bought = {}
 		state.goalProgress = {}
@@ -52,8 +53,8 @@ function Progression.moveOn(state: PlayerState.State)
 		Shop.refresh(state)
 		Progression.moved:fire(state, fromId)
 		task.spawn(PlayerData.save, player.UserId, PlayerState.snapshot(state), false)
-		return Travel.spawnFrame(state.plot)
-	end, if location.space == "venue" then "jet" else "moveOn")
+		return Travel.landingFrame(state.plot)
+	end, if location.space == "venue" and not location.door then "jet" else "moveOn")
 	moving[player] = nil
 end
 

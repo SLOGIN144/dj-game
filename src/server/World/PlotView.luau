@@ -11,6 +11,7 @@ local Art = require(script.Parent.Art)
 local Blockouts = require(ReplicatedStorage.Shared.Config.Blockouts)
 local Bounds = require(ReplicatedStorage.Shared.Util.Bounds)
 local Builder = require(script.Parent.Builder)
+local Buildings = require(ReplicatedStorage.Shared.Config.Buildings)
 local Building = require(script.Parent.Building)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Items = require(ReplicatedStorage.Shared.Config.Items)
@@ -64,6 +65,9 @@ local function billboard(parent: BasePart, size: Vector2, height: number): Billb
 	gui.Parent = parent
 	return gui
 end
+
+-- Defined below with the other door pieces; the street door is built in setup.
+local doorway: (plot: Model, at: CFrame, folder: Instance, action: string, object: string, kind: string) -> ProximityPrompt
 
 function PlotView.setup(plot: Model)
 	local root = origin(plot)
@@ -152,11 +156,14 @@ function PlotView.setup(plot: Model)
 		label("Hint", registerGui, UDim2.fromScale(0, 0.65), UDim2.fromScale(1, 0.35), Color3.new(0.86, 0.86, 0.9))
 	hint.Text = "Touch to collect"
 
-	for _, name in { "Shell", "Items", "Pads", "Showcase", "Boxes", "Outlines" } do
+	for _, name in { "Shell", "Items", "Pads", "Showcase", "Boxes", "Outlines", "Door" } do
 		local folder = Instance.new("Folder")
 		folder.Name = name
 		folder.Parent = plot
 	end
+	-- The building's front door on the street: anyone may go in once the plot has an owner.
+	local doorAt = origin(plot) * CFrame.new(0, 0.5, Buildings.dorm.frontZ - 0.1)
+	doorway(plot, doorAt, child(plot, "Door"), "Enter", "Free plot", "Enter")
 	PlotView.setOwner(plot, nil)
 	PlotView.setBuilding(plot, "free")
 end
@@ -206,11 +213,86 @@ local function buildItem(folder: Instance, locationId: string, item: Types.Item,
 	end
 end
 
--- Puts the register and the spawn where the layout has them, relative to `at`.
-local function placeFixtures(plot: Model, layout: PlotSpace.Layout, at: CFrame)
+-- Puts the register and the spawn where the layout has them, relative to `at`. A floor behind the
+-- building's door keeps the spawn on the street (`keepSpawn`): the owner starts outside the door.
+local function placeFixtures(plot: Model, layout: PlotSpace.Layout, at: CFrame, keepSpawn: boolean?)
 	PlotView.register(plot):PivotTo(at * CFrame.new(layout.register + Vector3.new(0, 1.5, 0)))
+	if keepSpawn then
+		return
+	end
 	-- Turned to face the room: characters spawn looking the way their spawn does.
 	PlotView.spawn(plot).CFrame = at * CFrame.new(layout.spawn + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, math.pi, 0)
+end
+
+local DOOR_COLOUR = Color3.fromRGB(150, 90, 255)
+
+-- A door with a prompt: a dark frame, a glowing panel and a light, standing at `at` (bottom centre,
+-- facing along -Z). The prompt's attribute `kind` holds the plot's index.
+function doorway(
+	plot: Model,
+	at: CFrame,
+	folder: Instance,
+	action: string,
+	object: string,
+	kind: string
+): ProximityPrompt
+	Builder.part(
+		"DoorFrame",
+		Vector3.new(7, 9, 0.6),
+		at * CFrame.new(0, 4.5, 0.2),
+		Color3.fromRGB(34, 30, 44),
+		folder,
+		{ collide = true } -- solid, so the camera never slips out through a doorway
+	)
+	local panel = Builder.part(
+		"DoorPanel",
+		Vector3.new(5, 8, 0.4),
+		at * CFrame.new(0, 4.2, -0.2),
+		DOOR_COLOUR,
+		folder,
+		{ material = Enum.Material.Neon, transparency = 0.25, collide = true }
+	)
+	local lamp = Builder.neon(
+		"DoorLamp",
+		Vector3.new(5, 0.4, 0.4),
+		at * CFrame.new(0, 8.7, -0.5),
+		Color3.fromRGB(255, 214, 160),
+		folder
+	)
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 200, 150)
+	light.Brightness = 1.2
+	light.Range = 16
+	light.Shadows = false
+	light.Parent = lamp
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = kind .. "Prompt"
+	prompt.ActionText = action
+	prompt.ObjectText = object
+	prompt.HoldDuration = 0
+	prompt.KeyboardKeyCode = Enum.KeyCode.E
+	prompt.MaxActivationDistance = 9
+	prompt.RequiresLineOfSight = false
+	prompt:SetAttribute(kind, plotIndex(plot)) -- anyone may use it; Services/Travel checks the plot
+	prompt.Parent = panel
+	return prompt
+end
+
+-- The exit door of a floor behind the door, in its room.
+local function exitDoor(plot: Model, layout: PlotSpace.Layout, at: CFrame, folder: Instance)
+	local exitAt = layout.exit
+	if not exitAt then
+		return
+	end
+	doorway(plot, at * CFrame.new(exitAt) * CFrame.Angles(0, math.pi, 0), folder, "Exit", "Back to the street", "Exit")
+end
+
+-- Turns the street door on while the plot has an owner whose floor is behind it.
+local function refreshDoor(plot: Model)
+	local prompt = child(plot, "Door"):FindFirstChild("EnterPrompt", true)
+	if prompt and prompt:IsA("ProximityPrompt") then
+		prompt.Enabled = plot:GetAttribute("OwnerUserId") ~= nil and PlotSpace.isDoor(PlotSpace.locationId(plot))
+	end
 end
 
 -- The jet at a venue that flies its owner back to the street (Services/Travel handles the prompt).
@@ -258,8 +340,12 @@ function PlotView.setLocation(plot: Model, locationId: string)
 	local layout = PlotSpace.layout(locationId)
 	local shell = child(plot, "Shell")
 	buildRoom(shell, locationId, at)
+	local door = PlotSpace.isDoor(locationId)
 	if venue then
 		venueJet(plot, layout, at, shell)
+	end
+	if door then
+		exitDoor(plot, layout, at, shell)
 	end
 
 	local showcase = child(plot, "Showcase")
@@ -278,7 +364,8 @@ function PlotView.setLocation(plot: Model, locationId: string)
 			end
 		end
 	end
-	placeFixtures(plot, layout, at)
+	placeFixtures(plot, layout, at, door)
+	refreshDoor(plot)
 end
 
 -- The building behind the room, for a location or "free" (Config/Buildings).
@@ -291,6 +378,11 @@ function PlotView.setOwner(plot: Model, player: Player?)
 	plot:SetAttribute("OwnerUserId", if player then player.UserId else nil)
 	local owner = child(plot, "Sign"):FindFirstChild("Owner", true) :: TextLabel
 	owner.Text = if player then player.DisplayName .. "'s Club" else "Free plot"
+	local prompt = child(plot, "Door"):FindFirstChild("EnterPrompt", true)
+	if prompt and prompt:IsA("ProximityPrompt") then
+		prompt.ObjectText = if player then player.DisplayName .. "'s club" else "Free plot"
+	end
+	refreshDoor(plot)
 end
 
 function PlotView.register(plot: Model): BasePart
@@ -326,6 +418,7 @@ function PlotView.clear(plot: Model)
 	placeFixtures(plot, PlotSpace.layout(nil), origin(plot))
 	PlotView.setRegister(plot, 0, false)
 	PlotView.setBuilding(plot, "free")
+	refreshDoor(plot)
 end
 
 -- A glowing pad with a floating label, at a button slot of the plot's location.

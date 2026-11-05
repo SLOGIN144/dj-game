@@ -18,11 +18,15 @@ local function venueReach(locationId: string): number
 end
 
 return {
-	["only Ibiza is built away from the street"] = function()
-		T.equal(PlotSpace.isVenue("dorm"), false)
+	["the dorm is a floor behind the door, only Ibiza is reached by the jet"] = function()
+		T.equal(PlotSpace.isVenue("dorm"), true)
+		T.equal(PlotSpace.isDoor("dorm"), true)
 		T.equal(PlotSpace.isVenue("club"), false)
+		T.equal(PlotSpace.isDoor("club"), false)
 		T.equal(PlotSpace.isVenue("ibiza"), true)
+		T.equal(PlotSpace.isDoor("ibiza"), false)
 		T.equal(PlotSpace.isVenue(nil), false)
+		T.equal(PlotSpace.isDoor(nil), false)
 	end,
 
 	["while away at Ibiza, the street keeps the club up"] = function()
@@ -30,13 +34,16 @@ return {
 		T.equal(PlotSpace.showcaseFor("dorm"), nil, "nothing before the first location")
 	end,
 
-	["a venue sets its own layout, the plot locations use the plot's"] = function()
+	["a venue sets its own layout; a floor behind the door has an arrival spot and an exit"] = function()
 		local ibiza = PlotSpace.layout("ibiza")
 		T.equal(ibiza, Blockouts.ibiza.layout)
-		local dorm = PlotSpace.layout("dorm")
-		T.equal(dorm.register, PlotLayout.register)
-		T.equal(#dorm.buttonSlots, #PlotLayout.buttonSlots)
 		T.truthy(ibiza.jet ~= nil, "Ibiza has a jet back to the street")
+		local dorm = PlotSpace.layout("dorm")
+		T.equal(dorm, Blockouts.dorm.layout)
+		T.truthy(dorm.exit ~= nil and dorm.jet == nil, "a door floor has an exit, not a jet")
+		local club = PlotSpace.layout("club")
+		T.equal(club.register, PlotLayout.register)
+		T.equal(#club.buttonSlots, #PlotLayout.buttonSlots)
 	end,
 
 	["venues never overlap each other or reach the street"] = function()

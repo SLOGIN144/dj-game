@@ -90,35 +90,53 @@ return {
 		end
 	end,
 
-	["the photographer stands in the open, not inside the room's parts"] = function()
-		for _, location in Locations do
-			if not table.find(location.events, "photographer") then
-				continue
-			end
-			local blockout = Blockouts[location.id]
-			local decks = blockout.decks
-			local floor = blockout.guests.spots[1].Y
-			local towards = decks.cameraLookAt - decks.stand
-			local ahead = decks.stand + Vector3.new(towards.X, 0, towards.Z).Unit * 6
-			local spot = decks.photographer or Vector3.new(ahead.X, floor, ahead.Z)
-			local function clear(specs: { any })
+	["people stand in the open: guests, the VIP at the door, the DJ and the photographer"] = function()
+		-- Whether a person standing with their feet at `spot` would be inside a solid part.
+		local function blocked(blockout: any, spot: Vector3): string?
+			local function check(specs: { any }, where: string): string?
 				for _, spec in specs do
+					if spec.collide == false or spec.terrain then
+						continue
+					end
 					local half = spec.size / 2
 					for _, height in { 1, 3 } do -- knees and chest
 						local offset = spot + Vector3.new(0, height, 0) - spec.offset
-						local inside = math.abs(offset.X) < half.X
+						if
+							math.abs(offset.X) < half.X
 							and math.abs(offset.Y) < half.Y
 							and math.abs(offset.Z) < half.Z
-						T.truthy(
-							not inside or spec.collide == false,
-							location.id .. ": the photographer is inside a part"
-						)
+						then
+							return where
+						end
 					end
 				end
+				return nil
 			end
-			clear(blockout.shell)
-			for _, specs in blockout.items do
-				clear(specs)
+			local found = check(blockout.shell, "the room")
+			for itemId, specs in blockout.items do
+				found = found or check(specs, itemId)
+			end
+			return found
+		end
+		for _, location in Locations do
+			local blockout = Blockouts[location.id]
+			local decks = blockout.decks
+			local floor = blockout.guests.spots[1].Y
+			local spots: { [string]: Vector3 } = {
+				entrance = blockout.guests.entrance,
+				["DJ stand"] = decks.stand,
+			}
+			for index, spot in blockout.guests.spots do
+				spots["guest " .. index] = spot
+			end
+			if table.find(location.events, "photographer") then
+				local towards = decks.cameraLookAt - decks.stand
+				local ahead = decks.stand + Vector3.new(towards.X, 0, towards.Z).Unit * 6
+				spots.photographer = decks.photographer or Vector3.new(ahead.X, floor, ahead.Z)
+			end
+			for name, spot in spots do
+				local inside = blocked(blockout, spot)
+				T.truthy(inside == nil, string.format("%s: %s stands inside %s", location.id, name, tostring(inside)))
 			end
 		end
 	end,

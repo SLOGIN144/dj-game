@@ -8,9 +8,11 @@ to change it. Nothing here touches monetization. **Each point still needs his OK
 As Filip asked, the whole game from this run is on the branch `prototype` (it was built on
 `claude/step2-plots-shop-hud`, which holds the same). The version from before the run
 (Milestone 1, the dorm only) is kept on the branch `prototype-m1`. Nothing was merged into `main`.
-None of it has run in Roblox yet: the cloud session had no Studio. `docs/renders/blockouts.png`
-shows every location as the code builds it (an offline render, not Roblox's lighting). Every module passes StyLua, Selene, a type check against the Roblox API
-and the Lune specs. `docs/studio-checklist.md` is the list to work through in Studio.
+None of it has run in Roblox yet: the cloud session had no Studio. Every module passes StyLua,
+Selene, a type check against the Roblox API and the Lune specs, and a simulation ran the real
+server and client together through a whole session. `docs/studio-checklist.md` is the list to
+work through in Studio. `docs/renders/blockouts.png` shows every location as the code builds it
+(an offline render, not Roblox's lighting).
 
 ## Needs Filip's OK first (working rule 9)
 
@@ -39,7 +41,7 @@ and the Lune specs. `docs/studio-checklist.md` is the list to work through in St
 | 16 | **Drop payoffs from bought features**: the confetti popper, CO2 jets and fireworks fire on every drop of the mix, pressed or not. A Perfect press also gives confetti over the dance floor. | GDD: "confetti and CO2 are payoffs on drops, never constant decoration". | `Controllers/Effects.luau`, `PartSpec.fx` |
 | 17 | **Moving heads sweep their beams** on the beat. Beams are `Beam` instances made from `PartSpec.beam`. | GDD: "beams cutting through haze from a rig above the booth". | `World/PartFactory.luau`, `Controllers/LightShow.luau` |
 | 18 | **Content rules**: every bar serves soda, juice or water only. The concept art's bottles and red cups became soda cans and juice. There are no brands, no logos and no real DJs. | Content and platform rules. | the blockouts in `Config/Blockouts/` |
-| 19 | **New sound slots** (`moveOn`, `jet`, `vip`, `camera`, `notice`, `starDj`, `co2`, `firework`, `click`) are all 0, so they're silent until Filip picks Creator Store sounds. | Never invent asset IDs. | `Config/Sounds.luau` |
+| 19 | **New sound slots** (`moveOn`, `jet`, `vip`, `camera`, `notice`, `starDj`, `co2`, `firework`, `click`, `crowd`) are all 0, so they're silent until Filip picks Creator Store sounds. | Never invent asset IDs. | `Config/Sounds.luau` |
 | 20 | **Studio-only testing shortcuts**: with the F2 overlay open, F3 gives cash, F4 finishes the location, F6 starts an event and F7 rests the DJs. The server only listens in Studio. | Testing four locations by playing through them would take about 9 hours. | `Services/DevTools.luau`, `UI/DebugOverlay.luau` |
 | 21 | **Cloud checks in the repo** (`tools/cloud/`): the Lune spec runner, the world build, a renderer, and a simulation that runs the real server and client together through a whole session. They're dev tools, not packages, and nothing in them ships. | They found a real start-up bug (the client waiting for remotes the server made late) that no type check could. Future sessions without Studio can run them. | `tools/cloud/README.md` |
 
@@ -58,6 +60,8 @@ These need no OK, but they're Filip's to like or change:
 | A crowd sound that follows the guest count (silent until it has an ID) | `Controllers/CrowdAmbience.luau`, `Config/Sounds.luau` |
 | The club's bar shelves hold soda cans | `Config/Blockouts/Club.luau` |
 | Total cash earned also shows in Roblox's player list | `Services/Leaderboard.luau` |
+| The star DJs wear their signature hats from the model sheet (Kiko's bucket hat, Ondra's visor, Mira's sun hat) | `Config/StarDjs.luau`, `Controllers/StarDjView.luau` |
+| The club is laid out like its concept: the soda bar along the left wall from the stairs, the lounge and VIP booth on the right | `Config/Blockouts/Club.luau` |
 
 ## Not done (later, or needs Filip)
 
@@ -65,5 +69,5 @@ These need no OK, but they're Filip's to like or change:
 - Monetization: untouched, as the rules say.
 - Real art: everything is a code blockout. `docs/art-pipeline.md` explains how imported models replace it, and the design canvas has a sheet for every model.
 - Guests and characters with R15 rigs and dance animations need animation IDs.
-- Sound effect IDs, a latency calibration screen and graphics-quality scaling.
+- Sound effect IDs and a latency calibration screen.
 - Tuning by eye and ear in Studio: light levels, the sunset, beams, guest moves and the decks camera shots of the new locations.

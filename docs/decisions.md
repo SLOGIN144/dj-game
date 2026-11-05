@@ -8,7 +8,8 @@ to change it. Nothing here touches monetization. **Each point still needs his OK
 As Filip asked, the whole game from this run is on the branch `prototype` (it was built on
 `claude/step2-plots-shop-hud`, which holds the same). The version from before the run
 (Milestone 1, the dorm only) is kept on the branch `prototype-m1`. Nothing was merged into `main`.
-None of it has run in Roblox yet: the cloud session had no Studio. Every module passes StyLua, Selene, a type check against the Roblox API
+None of it has run in Roblox yet: the cloud session had no Studio. `docs/renders/blockouts.png`
+shows every location as the code builds it (an offline render, not Roblox's lighting). Every module passes StyLua, Selene, a type check against the Roblox API
 and the Lune specs. `docs/studio-checklist.md` is the list to work through in Studio.
 
 ## Needs Filip's OK first (working rule 9)

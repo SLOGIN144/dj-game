@@ -3,6 +3,7 @@
 -- owner's career, so anyone on the street can see how far a player has come. A free plot shows the
 -- first stage with its lights off. Positions are plot-relative; the front face sits just behind
 -- the room's back wall. Model sheet: "Street" (building_dorm, building_apartment, building_tower).
+-- A free plot shows the first stage with only a few windows lit.
 
 export type Stage = {
 	floors: number,
@@ -30,7 +31,7 @@ local Buildings: { [string]: Stage } = {
 		roomHeight = 12,
 		colour = rgb(88, 82, 92),
 		trim = rgb(62, 58, 68),
-		litShare = 0,
+		litShare = 0.12, -- a few neighbours home, so the street never looks dead
 	},
 	dorm = {
 		floors = 3,

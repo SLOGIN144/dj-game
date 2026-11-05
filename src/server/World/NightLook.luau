@@ -1,13 +1,24 @@
 --!strict
 -- The street's night look (GDD: visual style and lighting): a dark sky, soft purple haze, bloom on
--- the neon and a little extra contrast and colour. Lighting.Technology can't be set from a
--- script: set it to Future in Studio (Lighting › Technology) for the real look.
+-- the neon and a little extra contrast and colour. Game scripts can't write the lighting mode
+-- (LightingStyle, PrioritizeLightingQuality), so it lives in the place. A new place's template
+-- brings its own effects, and two Atmospheres or Blooms fight, so those go.
 
 local Lighting = game:GetService("Lighting")
 
 local NightLook = {}
 
 local rgb = Color3.fromRGB
+
+local OURS = { NightHaze = true, NeonBloom = true, NightGrade = true }
+
+local function removeTemplateEffects()
+	for _, child in Lighting:GetChildren() do
+		if (child:IsA("PostEffect") or child:IsA("Atmosphere")) and not OURS[child.Name] then
+			child:Destroy()
+		end
+	end
+end
 
 local function effect<T>(className: string, name: string): T
 	local existing = Lighting:FindFirstChild(name)
@@ -21,6 +32,7 @@ local function effect<T>(className: string, name: string): T
 end
 
 function NightLook.apply()
+	removeTemplateEffects()
 	Lighting.ClockTime = 0
 	Lighting.Brightness = 1
 	Lighting.Ambient = rgb(26, 24, 42)

@@ -2,6 +2,13 @@
   "name": "dj-game",
   "tree": {
     "$className": "DataModel",
+    "Lighting": {
+      "$ignoreUnknownInstances": true,
+      "$properties": {
+        "LightingStyle": "Realistic",
+        "PrioritizeLightingQuality": true
+      }
+    },
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"

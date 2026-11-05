@@ -25,7 +25,7 @@ Filip's playtest.
 
 - [ ] `rojo serve`, connect the plugin, Play. The Output has no errors or warnings from `Server` or `Client`, and prints `[DevTools] Studio shortcuts on`.
 - [ ] Tagger place: Play runs the specs and prints `[Tests] 152 passed, 0 failed`.
-- [ ] Lighting › Technology is **Future** (a script can't set it).
+- [ ] Lighting is the old Future look: Roblox deprecated `Lighting.Technology` for `LightingStyle` and `PrioritizeLightingQuality`. Game scripts can't write them, so `default.project.json` sets `Realistic` and `true` through Rojo. Nothing to set by hand.
 - [ ] Note whether Workspace › StreamingEnabled is on. The code asks the server to stream the destination before every trip (`Travel.place`). If anything at the venue is missing on arrival, say so before trying fixes.
 
 ## 1. Music that mixes itself (step 3)

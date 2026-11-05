@@ -136,7 +136,8 @@ local function dancefloor(): { Types.PartSpec }
 	return tiles
 end
 
-local function bottles(y: number): { Types.PartSpec }
+-- A shelf row of soda cans in bright flavours, two deep: the bar sells soda only.
+local function sodaCans(y: number): { Types.PartSpec }
 	local colours = {
 		rgb(70, 200, 120),
 		rgb(255, 200, 60),
@@ -147,13 +148,16 @@ local function bottles(y: number): { Types.PartSpec }
 	}
 	local specs: { Types.PartSpec } = {}
 	for i, colour in colours do
-		table.insert(specs, {
-			size = v(1, 0.5, 0.5),
-			offset = v(-21.6, y, 2 + i * 1.8),
-			rotation = v(0, 0, 90),
-			shape = Enum.PartType.Cylinder,
-			colour = colour,
-		})
+		for _, pair in { -0.35, 0.35 } do
+			table.insert(specs, {
+				size = v(0.7, 0.45, 0.45),
+				offset = v(-21.6, y - 0.15, 2 + i * 1.8 + pair),
+				rotation = v(0, 0, 90),
+				shape = Enum.PartType.Cylinder,
+				colour = colour,
+				material = Enum.Material.Metal,
+			})
+		end
 	end
 	return specs
 end
@@ -312,7 +316,7 @@ local Club: Types.Blockout = {
 				colour = rgb(40, 80, 180),
 				material = Enum.Material.Neon,
 			},
-		}, bottles(5.6), bottles(8)),
+		}, sodaCans(5.6), sodaCans(8)),
 		club_mixer = {
 			{ size = v(5, 0.8, 1.8), offset = v(0, 5.8, 23.1), colour = rgb(42, 42, 50) },
 			{

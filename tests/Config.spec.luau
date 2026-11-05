@@ -11,7 +11,7 @@ local Buildings = require(Shared.Config.Buildings)
 local Goals = require(Shared.Config.Goals)
 local Items = require(Shared.Config.Items)
 local Locations = require(Shared.Config.Locations)
-local PlotLayout = require(Shared.Config.PlotLayout)
+local PlotSpace = require(Shared.Util.PlotSpace)
 local Skies = require(Shared.Config.Skies)
 local StarDjs = require(Shared.Config.StarDjs)
 local T = require(script.Parent.TestUtil)
@@ -131,7 +131,7 @@ return {
 				spots["guest " .. index] = spot
 			end
 			-- The fixtures: a player stands on each button and the spawn, and walks into the register.
-			local layout = blockout.layout or PlotLayout
+			local layout = PlotSpace.layout(location.id)
 			for index, slot in layout.buttonSlots do
 				spots["button " .. index] = slot
 			end

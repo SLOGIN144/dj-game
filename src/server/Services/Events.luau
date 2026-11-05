@@ -237,8 +237,9 @@ local function photographer(state: PlayerState.State, entry: Entry): boolean
 		return false
 	end
 	local floor = if #blockout.guests.spots > 0 then blockout.guests.spots[1].Y else stand.Y
-	local spot = stand + flat.Unit * PHOTO_STEP
-	local feet = origin * Vector3.new(spot.X, floor, spot.Z)
+	local ahead = stand + flat.Unit * PHOTO_STEP
+	local spot = blockout.decks.photographer or Vector3.new(ahead.X, floor, ahead.Z)
+	local feet = origin * spot
 	local dj = origin * stand
 	local figure, flash = Figures.photographer(CFrame.lookAt(feet, Vector3.new(dj.X, feet.Y, dj.Z)), state.plot)
 	marker(figure.PrimaryPart :: BasePart, "PHOTO", Color3.fromRGB(80, 160, 255), 4)

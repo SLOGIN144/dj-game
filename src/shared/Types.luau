@@ -136,6 +136,9 @@ export type Blockout = {
 		stand: Vector3, -- where the DJ stands, on the floor
 		camera: Vector3, -- the shot while playing
 		cameraLookAt: Vector3,
+		-- Where the photographer event stands, on the floor facing the DJ; a few studs in front
+		-- of the stand when nil.
+		photographer: Vector3?,
 	},
 	speakerItem: string?, -- the item the blown speaker event happens to
 	-- Where the buttons, the register and the spawn go, when not where Config/PlotLayout says,

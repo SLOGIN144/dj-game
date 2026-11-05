@@ -642,6 +642,7 @@ local Ibiza: Types.Blockout = {
 		stand = v(0, 3, 29),
 		camera = v(0, 13, 37),
 		cameraLookAt = v(0, 3, -2),
+		photographer = v(0, 0.6, 18.5), -- on the dance deck, just in front of the stage
 	},
 
 	speakerItem = "ibiza_speakers",

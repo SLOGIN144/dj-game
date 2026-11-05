@@ -1,9 +1,10 @@
 --!strict
 -- The underground club blockout, laid out after docs/concept/club.webp (model sheet "Underground
 -- club"): Rosa's basement, 44 x 36 with 16-stud walls, open at the front. Seen from the street the
--- left wall is at +X: the entrance stairs and the lounge on the left, the soda bar on the right, the
--- booth on a riser at the back with the DJ behind it, a truss of moving heads and strobes above an
--- LED dance floor. One dominant blue, white beams through haze. The bar serves soda only.
+-- left wall is at +X: the entrance stairs and then the soda bar run along the left, the lounge,
+-- the VIP booth and the merch stand are on the right, the booth stands on a riser at the back
+-- with the DJ behind it, under a truss of moving heads and strobes, above an LED dance floor. One
+-- dominant blue, white beams through haze. The bar serves soda only.
 
 local Types = require(script.Parent.Parent.Parent.Types)
 
@@ -28,6 +29,21 @@ local function list(...: { Types.PartSpec }): { Types.PartSpec }
 		end
 	end
 	return all
+end
+
+-- The same parts on the other side of the room (across X), moved `dz` studs along Z.
+local function mirrored(specs: { Types.PartSpec }, dz: number): { Types.PartSpec }
+	local result: { Types.PartSpec } = {}
+	for _, spec in specs do
+		local copy = table.clone(spec)
+		copy.offset = v(-spec.offset.X, spec.offset.Y, spec.offset.Z + dz)
+		local r = spec.rotation
+		if r then
+			copy.rotation = v(r.X, -r.Y, -r.Z)
+		end
+		table.insert(result, copy)
+	end
+	return result
 end
 
 local function ring(x: number, y: number, z: number, outer: number): { Types.PartSpec }
@@ -290,33 +306,37 @@ local Club: Types.Blockout = {
 				lightRole = "led",
 			},
 		},
-		club_bar = list({
-			{ size = v(3, 3.8, 14), offset = v(-17.5, 1.9, 8), colour = DARK },
-			{ size = v(3.4, 0.3, 14.4), offset = v(-17.5, 3.95, 8), colour = rgb(70, 72, 84) },
-			{
-				size = v(0.1, 0.25, 13.6),
-				offset = v(-15.95, 0.5, 8),
-				colour = BLUE,
-				material = Enum.Material.Neon,
-				lightRole = "led",
-			},
-			{ size = v(0.6, 0.2, 14), offset = v(-21.6, 5, 8), colour = rgb(60, 60, 70) },
-			{ size = v(0.6, 0.2, 14), offset = v(-21.6, 7.4, 8), colour = rgb(60, 60, 70) },
-			{
-				size = v(0.1, 0.15, 14),
-				offset = v(-21.25, 4.85, 8),
-				colour = BLUE,
-				material = Enum.Material.Neon,
-				lightRole = "led",
-			},
-			{ size = v(3, 7, 3), offset = v(-20.5, 3.7, 17.2), colour = DARK },
-			{
-				size = v(2.6, 6.4, 0.1),
-				offset = v(-20.5, 3.7, 15.65),
-				colour = rgb(40, 80, 180),
-				material = Enum.Material.Neon,
-			},
-		}, sodaCans(5.6), sodaCans(8)),
+		-- Along the left wall from the stairs to the back, as in the concept.
+		club_bar = mirrored(
+			list({
+				{ size = v(3, 3.8, 14), offset = v(-17.5, 1.9, 8), colour = DARK },
+				{ size = v(3.4, 0.3, 14.4), offset = v(-17.5, 3.95, 8), colour = rgb(70, 72, 84) },
+				{
+					size = v(0.1, 0.25, 13.6),
+					offset = v(-15.95, 0.5, 8),
+					colour = BLUE,
+					material = Enum.Material.Neon,
+					lightRole = "led",
+				},
+				{ size = v(0.6, 0.2, 14), offset = v(-21.6, 5, 8), colour = rgb(60, 60, 70) },
+				{ size = v(0.6, 0.2, 14), offset = v(-21.6, 7.4, 8), colour = rgb(60, 60, 70) },
+				{
+					size = v(0.1, 0.15, 14),
+					offset = v(-21.25, 4.85, 8),
+					colour = BLUE,
+					material = Enum.Material.Neon,
+					lightRole = "led",
+				},
+				{ size = v(3, 7, 3), offset = v(-20.5, 3.7, 17.2), colour = DARK },
+				{
+					size = v(2.6, 6.4, 0.1),
+					offset = v(-20.5, 3.7, 15.65),
+					colour = rgb(40, 80, 180),
+					material = Enum.Material.Neon,
+				},
+			}, sodaCans(5.6), sodaCans(8)),
+			3
+		),
 		club_mixer = {
 			{ size = v(5, 0.8, 1.8), offset = v(0, 5.8, 23.1), colour = rgb(42, 42, 50) },
 			{
@@ -341,8 +361,9 @@ local Club: Types.Blockout = {
 				lightRole = "screen",
 			},
 		},
-		club_stools = list(stool(3), stool(8), stool(13)),
-		club_lounge = list(sofa(9), sofa(17.5)),
+		club_stools = mirrored(list(stool(3), stool(8), stool(13)), 3),
+		-- The lounge on the right, by the merch stand.
+		club_lounge = mirrored(list(sofa(9), sofa(16.5)), 0),
 		club_dancefloor = dancefloor(),
 		club_truss = {
 			{ size = v(32, 1.5, 1.5), offset = v(0, 13.5, 21), colour = STEEL, material = Enum.Material.DiamondPlate },
@@ -428,7 +449,7 @@ local Club: Types.Blockout = {
 				material = Enum.Material.Neon,
 			},
 		},
-		club_vip = {
+		club_vip = mirrored({
 			{
 				size = v(0.3, 2.2, 0.3),
 				offset = v(14.5, 1.3, 20.8),
@@ -461,7 +482,7 @@ local Club: Types.Blockout = {
 				material = Enum.Material.Neon,
 				light = { colour = BLUE, brightness = 1, range = 10 },
 			},
-		},
+		}, 0),
 		club_4deck = {
 			{ size = v(10, 0.8, 1.8), offset = v(0, 5.8, 23.1), colour = rgb(42, 42, 50) },
 			{

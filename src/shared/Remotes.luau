@@ -21,6 +21,8 @@ local NAMES = {
 	"BookDj", -- client -> server: book a star DJ
 	"DjNotice", -- server -> owner: a booking was refused, or a guest set started or ended
 	"SetSettings", -- client -> server: the player's settings changed (volumes, low graphics)
+	"PlaceOrder", -- client -> server: order the items in the phone's cart
+	"OrderResult", -- server -> owner: whether an order went through, and if not why
 	"DevCheat", -- client -> server, Studio only: a testing shortcut (Services/DevTools)
 }
 

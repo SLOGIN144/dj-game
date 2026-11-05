@@ -1398,6 +1398,8 @@ local okSession, sessionError = pcall(function()
 	end
 
 	print("== leave and rejoin")
+	state.goalProgress.ibiza_perfect = 2 -- two of Solenne's five Perfect drops
+	local kikoRest = state.djRestUntil.dj_kiko
 	local cashBefore, boughtBefore = state.cash, 0
 	for _ in state.bought do
 		boughtBefore += 1
@@ -1421,6 +1423,8 @@ local okSession, sessionError = pcall(function()
 		advance(1)
 		check(PlotSpace.contains(back.plot, rootOf(againBody).Position), "the character is put at the venue")
 		check(back.settings.musicVolume == 0.8, "the settings come back")
+		check(back.goalProgress.ibiza_perfect == 2, "a goal's count comes back")
+		check(kikoRest ~= nil and back.djRestUntil.dj_kiko == kikoRest, "Kiko's rest comes back")
 	end
 end)
 if not okSession then
